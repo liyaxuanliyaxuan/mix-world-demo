@@ -266,7 +266,7 @@
         "desc": "Replay the recorded action sequence.",
         "video": "/media/actions/original.mp4",
         "poster": "/media/actions/original_poster.jpg",
-        "traj": "/media/actions/traj_original.svg"
+        "traj": "/media/actions/traj_original.json"
       },
       {
         "id": "right_held",
@@ -274,7 +274,7 @@
         "desc": "Hold the right arm at its initial state while the left arm follows the recorded actions.",
         "video": "/media/actions/right_held.mp4",
         "poster": "/media/actions/right_held_poster.jpg",
-        "traj": "/media/actions/traj_right_held.svg"
+        "traj": "/media/actions/traj_right_held.json"
       },
       {
         "id": "xy_inverted",
@@ -282,7 +282,7 @@
         "desc": "Mirror both grippers’ XY action coordinates about their starting positions.",
         "video": "/media/actions/xy_inverted.mp4",
         "poster": "/media/actions/xy_inverted_poster.jpg",
-        "traj": "/media/actions/traj_xy_inverted.svg"
+        "traj": "/media/actions/traj_xy_inverted.json"
       },
       {
         "id": "both_held",
@@ -290,7 +290,7 @@
         "desc": "Hold both arms at their initial states.",
         "video": "/media/actions/both_held.mp4",
         "poster": "/media/actions/both_held_poster.jpg",
-        "traj": "/media/actions/traj_both_held.svg"
+        "traj": "/media/actions/traj_both_held.json"
       },
       {
         "id": "time_reversed",
@@ -302,7 +302,7 @@
         "different_start": true
       }
     ],
-    "traj_caption": "Live end-effector position of the left (blue) and right (orange) gripper in the local top-down frame, tracked while the prediction plays; the strips below show each gripper's open fraction over the 38.4 s rollout.",
+    "traj_caption": "Live end-effector positions of the left (blue) and right (orange) gripper, located directly in the video frames by visual tracking and plotted in camera pixel coordinates; one sub-panel per arm.",
     "scope_note": "Qualitative action responses. The first four conditions share an initial observation; time reversal starts from the original prediction’s final frame.",
     "excluded_note": "Time reversal uses a different initial observation.",
     "lead": "From the same initial observation, changing the action sequence produces different predicted hand motions and object responses."

@@ -4,6 +4,12 @@
  * Condition descriptions sit below it so text wrapping cannot shift either panel.
  * Same-start switches retain playback time (wrapping shorter clips); time
  * reversal uses a different observation and starts a new timeline.
+ *
+ * Owner directive 2026-09-16: the left panel plots where the end effectors
+ * actually are in the video frames (frame-accurate xy measured by
+ * scripts/track_gripper_positions.py), split into one sub-panel per arm. Each
+ * sub-panel mirrors the camera frame's pixel space, with the current frame
+ * on a dark background, so the dot sits exactly where the gripper is on screen.
  */
 import site from "../data/site.json";
 
@@ -50,8 +56,8 @@ const { actions } = site;
 <style>
   .acs__grid {
     display: grid;
-    /* Native aspect ratios: canvas 8:5, video 16:9; equal rendered heights. */
-    grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1.111111fr);
+    /* Same 16:9 rendered height for canvas and video columns. */
+    grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr);
     column-gap: var(--space-2);
     row-gap: var(--space-1);
     align-items: center;
@@ -124,7 +130,13 @@ const { actions } = site;
 <script>
   import { registerPlayer } from "../scripts/players";
 
-  interface TrajSeries { t: number[]; left: { x: number[]; y: number[]; grip: number[] }; right: { x: number[]; y: number[]; grip: number[] }; bounds: { xmin: number; xmax: number; ymin: number; ymax: number }; duration_s: number }
+  interface TrajSeries {
+    t: number[];
+    duration_s: number;
+    frame: { width: number; height: number };
+    left: { x: number[]; y: number[] };
+    right: { x: number[]; y: number[] };
+  }
 
   const root = document.querySelector<HTMLElement>("[data-action-selector]");
   if (root) {
@@ -146,95 +158,103 @@ const { actions } = site;
     }
 
     // ---- canvas drawing -------------------------------------------------
+    // Same panel geometry, grip-strip box, strokes and type as the paper's
+    // fixed-base bimanual view.
     const ctx = canvas.getContext("2d")!;
     const W = 640, H = 400;
     const PANELS = [
-      { arm: "left" as const, label: "LEFT GRIPPER", color: "#4da3ff", x: 22, y: 26, w: 290, h: 218 },
-      { arm: "right" as const, label: "RIGHT GRIPPER", color: "#ffab52", x: 328, y: 26, w: 290, h: 218 },
+      { arm: "left" as const, label: "LEFT END-EFFECTOR", gripLabel: "LEFT GRIPPER", color: "#4da3ff", x: 22, y: 26, w: 290, h: 218 },
+      { arm: "right" as const, label: "RIGHT END-EFFECTOR", gripLabel: "RIGHT GRIPPER", color: "#ffab52", x: 328, y: 26, w: 290, h: 218 },
     ];
     const GRIP = { x: 22, y: H - 86, w: 290 * 2 + 16, h: 54 };
-    const INK = "#c9c4b6", GRID = "rgba(255,255,255,0.1)";
+    const INK = "#c9c4b6";
 
     function fitCanvas() {
       const dpr = window.devicePixelRatio || 1;
-      const w = canvas.clientWidth || 640;
+      const w = canvas.clientWidth || W;
       canvas.width = w * dpr;
       canvas.height = w * (H / W) * dpr;
       ctx.setTransform(dpr * (w / W), 0, 0, dpr * (w / W), 0, 0);
     }
 
     function draw(traj: TrajSeries, t: number) {
-      const b = traj.bounds;
-      const n = traj.t.length;
+      const n = traj.left.x.length;
       const idx = Math.max(0, Math.min(n - 1, Math.round(t * 10)));
 
-      ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = "#16140f";
       ctx.fillRect(0, 0, W, H);
 
       for (const p of PANELS) {
-        ctx.strokeStyle = "rgba(255,255,255,0.16)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(p.x, p.y, p.w, p.h);
-        ctx.strokeStyle = GRID;
-        for (let g = 1; g < 4; g++) {
-          ctx.beginPath(); ctx.moveTo(p.x, p.y + (p.h * g) / 4); ctx.lineTo(p.x + p.w, p.y + (p.h * g) / 4); ctx.stroke();
-        }
-        for (let g = 1; g < 4; g++) {
-          ctx.beginPath(); ctx.moveTo(p.x + (p.w * g) / 4, p.y); ctx.lineTo(p.x + (p.w * g) / 4, p.y + p.h); ctx.stroke();
-        }
         ctx.fillStyle = p.color;
         ctx.font = "700 20px Inter, system-ui, sans-serif";
         ctx.fillText(p.label, p.x, p.y - 10);
+        ctx.strokeStyle = "rgba(255,255,255,0.16)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(p.x, p.y, p.w, p.h);
+        drawPanel(p, traj, idx);
+      }
+      if (traj.grip) drawGripStrips(traj, idx);
 
-        const xs = traj[p.arm].x, ys = traj[p.arm].y, gs = traj[p.arm].grip;
-        const px = p.x + ((xs[idx] - b.xmin) / (b.xmax - b.xmin)) * p.w;
-        const py = p.y + p.h - ((ys[idx] - b.ymin) / (b.ymax - b.ymin)) * p.h;
+      ctx.fillStyle = "#aaa598";
+      ctx.font = "12px Inter, system-ui, sans-serif";
+      ctx.fillText("measured from the video · camera pixels (384 × 216)", 30, 388);
+      ctx.textAlign = "right";
+      ctx.fillText(`${Math.min(t, traj.duration_s).toFixed(1)} s`, 610, 388);
+      ctx.textAlign = "left";
+    }
 
-        ctx.strokeStyle = "rgba(255,255,255,0.25)";
-        ctx.beginPath(); ctx.moveTo(p.x, py); ctx.lineTo(p.x + p.w, py); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(px, p.y); ctx.lineTo(px, p.y + p.h); ctx.stroke();
+    function drawPanel(p: (typeof PANELS)[number], traj: TrajSeries, idx: number) {
+      const fw = traj.frame.width, fh = traj.frame.height;
+      const xs = traj[p.arm].x, ys = traj[p.arm].y;
+      const px = p.x + (xs[idx] / fw) * p.w;
+      const py = p.y + (ys[idx] / fh) * p.h;
 
-        const r = 6 + gs[idx] * 4.5;
-        ctx.shadowColor = p.color; ctx.shadowBlur = 20;
-        ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2);
-        ctx.fillStyle = p.color; ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2);
-        ctx.fillStyle = "#fff"; ctx.fill();
-
-        ctx.fillStyle = INK;
-        ctx.font = "14px Inter, system-ui, sans-serif";
-        ctx.fillText(
-          `x ${xs[idx] >= 0 ? "+" : ""}${xs[idx].toFixed(2)}  y ${ys[idx] >= 0 ? "+" : ""}${ys[idx].toFixed(2)}`,
-          p.x, p.y + p.h + 20
-        );
+      ctx.strokeStyle = "rgba(255,255,255,0.1)";
+      ctx.lineWidth = 1;
+      for (let g = 1; g < 4; g++) {
+        ctx.beginPath(); ctx.moveTo(p.x, p.y + (p.h * g) / 4); ctx.lineTo(p.x + p.w, p.y + (p.h * g) / 4); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(p.x + (p.w * g) / 4, p.y); ctx.lineTo(p.x + (p.w * g) / 4, p.y + p.h); ctx.stroke();
       }
 
-      // gripper open-fraction strips (time series)
+      ctx.shadowColor = p.color; ctx.shadowBlur = 14;
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawGripStrips(traj: TrajSeries, idx: number) {
       for (const [p, frac] of [[PANELS[0], 0], [PANELS[1], 0.52]] as const) {
-        const g = traj[p.arm].grip;
-        const gx = GRIP.x + frac * GRIP.w;
-        const gw = GRIP.w * 0.48;
+        const g = (traj.grip as any)[p.arm];
+        if (!g) continue;
+        const cap = g.open.length;
+        const iIdx = Math.max(0, Math.min(cap - 1, idx));
+        const gx = GRIP.x + frac * GRIP.w, gw = GRIP.w * 0.48;
         const gy = GRIP.y + GRIP.h;
+        const X = (i: number) => gx + (i / (cap - 1)) * gw;
+        const Y = (i: number) => gy - g.open[i] * GRIP.h;
+
         ctx.strokeStyle = "rgba(255,255,255,0.16)";
         ctx.strokeRect(gx, GRIP.y, gw, GRIP.h);
         ctx.beginPath();
-        for (let i = 0; i <= idx; i++) {
-          const X = gx + (i / (n - 1)) * gw;
-          const Y = gy - g[i] * GRIP.h;
-          i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+        for (let i = 0; i < cap; i++) {
+          i === 0 ? ctx.moveTo(X(i), Y(i)) : ctx.lineTo(X(i), Y(i));
+        }
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = p.color; ctx.lineWidth = 1.4; ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        for (let i = 0; i <= iIdx; i++) {
+          i === 0 ? ctx.moveTo(X(i), Y(i)) : ctx.lineTo(X(i), Y(i));
         }
         ctx.shadowColor = p.color; ctx.shadowBlur = 8;
         ctx.strokeStyle = p.color; ctx.lineWidth = 2.2; ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.fillStyle = INK;
         ctx.font = "12px Inter, system-ui, sans-serif";
-        ctx.fillText(p.label, gx, GRIP.y - 6);
+        ctx.fillText(`${p.gripLabel} · 0 to ${((cap - 1) / 10).toFixed(1)} s`, gx, GRIP.y - 6);
       }
-      ctx.fillStyle = INK;
-      ctx.font = "12px Inter, system-ui, sans-serif";
-      ctx.fillText(`Gripper open fraction — 0 to ${traj.duration_s.toFixed(1)} s`, GRIP.x, H - 6);
     }
 
     function renderNow() {
@@ -255,6 +275,7 @@ const { actions } = site;
     video.addEventListener("pause", stopLoop);
     video.addEventListener("ended", stopLoop);
     video.addEventListener("seeked", renderNow);
+    video.addEventListener("loadeddata", renderNow);
     window.addEventListener("resize", () => { fitCanvas(); renderNow(); });
 
     // auto-play together (canvas + video) when the section is on screen;

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Export per-condition end-effector trajectory data as JSON for the
+"""SUPERSEDED 2026-09-16: do not run. This exported commanded robot-base
+displacements (local-frame XY), which do not correspond to the video frames.
+The action panel now plots frame-accurate gripper positions produced by
+scripts/track_gripper_positions.py, which overwrites the same traj_*.json
+files with video-measured coordinates.
+
+Export per-condition end-effector trajectory data as JSON for the
 on-video animated overlay (canvas).
 
 Source: handover raw_action.npy (14D absolute ee pose, per arm
