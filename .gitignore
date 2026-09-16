@@ -1,0 +1,9 @@
+node_modules/
+.astro/
+dist/
+dist-review/
+dist-public/
+
+# internal material never enters release packaging
+internal/paper/
+internal/raw/

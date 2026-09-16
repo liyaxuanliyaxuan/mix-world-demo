@@ -1,0 +1,124 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+
+// MODE: "development" (dev server) | "production" (plain build) |
+// "review" | "public" via `astro build --mode ...`.
+const mode = import.meta.env.MODE;
+const isPublic = mode === "public";
+// Anonymous review previews must not be indexed; noindex is not anonymity,
+// just a belt-and-suspenders measure for review builds.
+const robots = isPublic ? null : "noindex, nofollow";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {robots && <meta name="robots" content={robots} />}
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+
+    <button class="to-top" data-to-top data-visible="false" aria-label="Back to top">
+      <svg viewBox="0 0 36 36" aria-hidden="true">
+        <circle class="ring-bg" cx="18" cy="18" r="16"></circle>
+        <circle class="ring" data-to-top-ring cx="18" cy="18" r="16"></circle>
+      </svg>
+      <span aria-hidden="true">&uarr;</span>
+    </button>
+
+    <div class="lightbox" data-lightbox hidden>
+      <button class="lightbox__close" type="button" aria-label="Close">&times;</button>
+      <img data-lightbox-img src="" alt="" />
+      <p class="lightbox__caption" data-lightbox-caption></p>
+    </div>
+  </body>
+</html>
+
+<script>
+  // scroll-reveal: staggered entrance for every [data-reveal] element
+  const revealEls = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced || !("IntersectionObserver" in window)) {
+    revealEls.forEach((el) => el.classList.add("is-revealed"));
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-revealed");
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+    );
+    revealEls.forEach((el) => io.observe(el));
+  }
+
+  // lightbox for the large paper figures
+  const lightbox = document.querySelector<HTMLElement>("[data-lightbox]");
+  const lbImg = document.querySelector<HTMLImageElement>("[data-lightbox-img]");
+  const lbCaption = document.querySelector<HTMLElement>("[data-lightbox-caption]");
+  const lbClose = document.querySelector<HTMLButtonElement>(".lightbox__close");
+  const openLb = (img: HTMLImageElement) => {
+    if (!lightbox || !lbImg) return;
+    lbImg.src = img.currentSrc || img.src;
+    lbImg.alt = img.alt;
+    const fig = img.closest("figure");
+    const cap = fig?.querySelector("figcaption")?.textContent ?? "";
+    if (lbCaption) lbCaption.textContent = cap || img.alt;
+    lightbox.hidden = false;
+    requestAnimationFrame(() => lightbox.classList.add("is-open"));
+    lbClose?.focus();
+  };
+  const closeLb = () => {
+    if (!lightbox) return;
+    lightbox.classList.remove("is-open");
+    lightbox.addEventListener(
+      "transitionend",
+      () => {
+        lightbox.hidden = true;
+      },
+      { once: true }
+    );
+  };
+  document.querySelectorAll<HTMLElement>("main .media-frame img").forEach((img) => {
+    img.setAttribute("data-lightbox", "");
+    img.style.cursor = "zoom-in";
+    img.addEventListener("click", () => openLb(img));
+  });
+  lightbox?.addEventListener("click", closeLb);
+  lbClose?.addEventListener("click", closeLb);
+  addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && lightbox && !lightbox.hidden) closeLb();
+  });
+
+  // back-to-top with reading-progress ring
+  const toTop = document.querySelector<HTMLButtonElement>("[data-to-top]");
+  const ring = document.querySelector<SVGCircleElement>("[data-to-top-ring]");
+  if (toTop && ring) {
+    const C = 2 * Math.PI * 16;
+    ring.style.strokeDasharray = String(C);
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      const p = max > 0 ? Math.min(scrollY / max, 1) : 0;
+      ring.style.strokeDashoffset = String(C * (1 - p));
+      toTop.dataset.visible = String(scrollY > 600);
+    };
+    addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    toTop.addEventListener("click", () =>
+      scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" })
+    );
+  }
+</script>

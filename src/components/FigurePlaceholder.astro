@@ -1,0 +1,38 @@
+---
+/**
+ * Interim paper-figure placeholder for modules whose videos have not been
+ * delivered yet. Owner-approved policy (2026-09-15): show the paper figure
+ * in dev and review builds with an explicit status label; the public build
+ * never ships unverified placeholders, so the whole slot renders nothing.
+ */
+interface Props {
+  src: string;
+  alt: string;
+  caption: string;
+  pending: string;
+}
+const { src, alt, caption, pending } = Astro.props;
+const mode = import.meta.env.MODE;
+const isDev = mode === "development";
+// plain `astro build` defaults to "production"; treat it like review
+const isPublic = mode === "public";
+---
+
+{
+  !isPublic && (
+    <figure class="figure-placeholder" style="margin: 0;">
+      <div class="media-frame">
+        <img src={src} alt={alt} loading="lazy" />
+      </div>
+      <figcaption class="figure-caption">{caption}</figcaption>
+    </figure>
+  )
+}
+
+<style>
+  .figure-placeholder img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+</style>

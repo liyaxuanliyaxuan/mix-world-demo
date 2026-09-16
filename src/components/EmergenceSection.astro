@@ -1,0 +1,353 @@
+---
+/**
+ * Emergence — "How World Modeling Emerges During Training", replicating the
+ * blog's module: the loss-curve SVG draws itself into view and PAUSES at each
+ * sampled checkpoint (7% / 20% / 57% / 85%); as it pauses, the matching
+ * vertical column of task GIFs below fades in — draw and reveal stay in sync.
+ */
+import site from "../data/site.json";
+import LossCurve from "../assets/loss-curve.svg?raw";
+
+const { emergence } = site;
+const isDev = import.meta.env.MODE === "development";
+const reducedMotionNote = "Reduced-motion visitors see the finished curve and all frames immediately.";
+---
+
+<div class="emergence__board" data-emergence-board>
+  <div class="emergence__curve media-frame">
+    <button type="button" class="emergence__restart" data-emergence-restart aria-label="Replay curve animation">↻</button>
+    <div class="emergence__curve-svg" set:html={LossCurve} />
+  </div>
+
+  <div class="emergence__cols" data-emergence-cols>
+    <div class="emergence__headers">
+      {emergence.column_headers.map((h, i) => <span data-col={i}>{h}</span>)}
+    </div>
+    {
+      emergence.gif_rows.map((row) => (
+        <div class="emergence__row">
+          <span class="emergence__task">{row.task}</span>
+          <div class="emergence__gifs">
+            {row.checkpoints.map((ckpt, j) => (
+              <figure class="emergence__gif" data-col={j} style="margin: 0;">
+                <img
+                  src={emergence.gif_src_template.replace("{task}", row.task.toLowerCase()).replace("{ckpt}", ckpt)}
+                  alt={`${row.task} task, generated output at checkpoint ${ckpt}`}
+                  loading="eager"
+                  width={157}
+                  height={99}
+                />
+              </figure>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<div class="text-block">
+  <p class="figure-caption">{emergence.scope_note}</p>
+</div>
+
+<style>
+  .emergence__intro {
+    color: var(--color-text-secondary);
+    max-width: var(--max-text-width);
+  }
+
+  .emergence__curve {
+    position: relative;
+    padding: var(--space-3) var(--space-3) var(--space-2);
+  }
+
+  .emergence__curve-svg :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* checkpoint dashes pulse while the curve pauses on them */
+  .emergence__curve-svg :global(line.is-hit) {
+    stroke-width: 2;
+  }
+
+  .emergence__restart {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    appearance: none;
+    border: 1px solid var(--color-pill-ink);
+    background: var(--color-pill-ink);
+    border-radius: 50%;
+    color: var(--color-pill-ink-text);
+    font-size: 0.875rem;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .emergence__restart:hover {
+    opacity: 0.85;
+    transform: rotate(-40deg);
+  }
+
+  .emergence__cols {
+    margin-top: var(--space-2);
+  }
+
+  .emergence__headers,
+  .emergence__gifs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-2);
+    padding-left: 90px;
+  }
+
+  .emergence__headers {
+    margin-bottom: var(--space-1);
+  }
+
+  .emergence__headers span {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    color: var(--color-text-faint);
+  }
+
+  .emergence__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
+  .emergence__task {
+    width: 90px;
+    flex: none;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+  }
+
+  .emergence__gifs {
+    padding-left: 0;
+    flex: 1;
+  }
+
+  .emergence__gifs img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+    border: var(--border-hairline);
+  }
+
+  /* staged reveal: columns stay hidden until the curve pauses on them */
+  .emergence__board.is-anim [data-col] {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .emergence__board.is-anim [data-col].is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .emergence__board.is-anim [data-col] {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  .text-block {
+    margin-top: var(--space-2);
+  }
+
+  @media (max-width: 640px) {
+    .emergence__headers,
+    .emergence__gifs {
+      padding-left: 0;
+    }
+
+    .emergence__task {
+      width: 100%;
+    }
+
+    .emergence__row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>
+
+<script>
+  const board = document.querySelector<HTMLElement>("[data-emergence-board]");
+  // bind once: HMR re-execution must never stack competing animators
+  // (the visible symptom was the curve flickering between offsets)
+  const alreadyBound = board && board.dataset.emergenceBound === "1";
+  if (board && !alreadyBound) {
+    board.dataset.emergenceBound = "1";
+
+    const path = board.querySelector<SVGPathElement>(".loss-curve-path");
+    const dot = board.querySelector<SVGCircleElement>("circle[fill='#d4883a']");
+    if (path && dot) {
+      const len = path.getTotalLength();
+      // checkpoint markers + their % labels, paired by DOM order (sorted by x)
+      const markers = Array.from(board.querySelectorAll<SVGLineElement>("line[stroke='#d4883a']"))
+        .map((line) => ({ x: Number(line.getAttribute("x1")), line }));
+      const labels = Array.from(board.querySelectorAll<SVGTextElement>("text[fill='#d4883a']"))
+        .map((text) => ({ x: Number(text.getAttribute("x")), text }));
+      const checkpoints = markers
+        .map((m, i) => ({ ...m, label: labels[i]?.text ?? null }))
+        .sort((a, b) => a.x - b.x);
+
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let runId = 0;
+
+      const setProgress = (p: number) => {
+        path.style.strokeDasharray = `${len} ${len}`;
+        path.style.strokeDashoffset = `${len * (1 - p)}px`;
+        const pt = path.getPointAtLength(len * p);
+        dot.setAttribute("cx", pt.x.toFixed(1));
+        dot.setAttribute("cy", pt.y.toFixed(1));
+        checkpoints.forEach((c) => {
+          const passed = pt.x >= c.x - 1;
+          c.line.style.opacity = passed ? "1" : "0";
+          if (c.label) c.label.style.opacity = passed ? "1" : "0";
+        });
+      };
+
+      const setStart = () => {
+        const p0 = path.getPointAtLength(0);
+        dot.setAttribute("cx", p0.x.toFixed(1));
+        dot.setAttribute("cy", p0.y.toFixed(1));
+        setProgress(0);
+      };
+
+      // length along the path at a given curve-x (binary search)
+      const lengthAtX = (xTarget: number) => {
+        let lo = 0;
+        let hi = len;
+        for (let i = 0; i < 22; i++) {
+          const mid = (lo + hi) / 2;
+          if (path.getPointAtLength(mid).x < xTarget) lo = mid;
+          else hi = mid;
+        }
+        return (lo + hi) / 2;
+      };
+
+      const colEls = (j: number) =>
+        board.querySelectorAll<HTMLElement>(`[data-col="${j}"]`);
+      const allCols = board.querySelectorAll<HTMLElement>("[data-col]");
+
+      // time-based interval (not rAF): keeps animating even when the browser
+      // pane is occluded and rAF is throttled
+      const tween = (from: number, to: number, ms: number, token: number) =>
+        new Promise<void>((resolve) => {
+          const t0 = performance.now();
+          const iv = window.setInterval(() => {
+            if (token !== runId) {
+              window.clearInterval(iv);
+              return resolve();
+            }
+            const t = Math.min(1, (performance.now() - t0) / ms);
+            const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            setProgress(from + (to - from) * eased);
+            if (t >= 1) {
+              window.clearInterval(iv);
+              resolve();
+            }
+          }, 16);
+        });
+
+      const wait = (ms: number, token: number) =>
+        new Promise<void>((resolve) => {
+          const t0 = performance.now();
+          const iv = window.setInterval(() => {
+            if (token !== runId) {
+              window.clearInterval(iv);
+              return resolve();
+            }
+            if (performance.now() - t0 >= ms) {
+              window.clearInterval(iv);
+              resolve();
+            }
+          }, 30);
+        });
+
+      const PAUSE = 620; // hold at each checkpoint while its column appears
+      const DRAW_MS = 3600; // slow, steady drawing time (before checkpoint pauses)
+
+      const run = async () => {
+        const token = ++runId;
+        setStart();
+        board.classList.add("is-anim");
+        allCols.forEach((el) => el.classList.remove("is-revealed"));
+        checkpoints.forEach((c) => c.line.classList.remove("is-hit"));
+
+        const lens = checkpoints.map((c) => lengthAtX(c.x));
+        // tween works in normalized progress (0..1); lengths convert via len
+        let fromP = 0;
+        for (let i = 0; i < lens.length; i++) {
+          const toP = lens[i] / len;
+          await tween(fromP, toP, Math.max(240, DRAW_MS * (toP - fromP)), token);
+          if (token !== runId) return;
+          checkpoints[i].line.classList.add("is-hit");
+          colEls(i).forEach((el) => el.classList.add("is-revealed"));
+          await wait(PAUSE, token);
+          if (token !== runId) return;
+          fromP = toP;
+        }
+        await tween(fromP, 1, Math.max(300, DRAW_MS * (1 - fromP)), token);
+        if (token !== runId) return;
+        board.classList.remove("is-anim");
+      };
+
+      const revealAll = () => {
+        board.querySelectorAll<HTMLElement>("[data-col]").forEach((el) =>
+          el.classList.add("is-revealed")
+        );
+      };
+
+      const setProgressAll = () => {
+        setProgress(1);
+        checkpoints.forEach((c) => c.line.classList.add("is-hit"));
+        revealAll();
+        board.classList.remove("is-anim");
+      };
+
+      if (reduce) {
+        setProgressAll();
+      } else {
+        // hide the column board until the animation triggers
+        board.classList.add("is-anim");
+        setStart();
+        let started = false;
+        // layout-rect polling instead of IntersectionObserver: IO callbacks
+        // are suspended when the hosting pane is occluded, which would
+        // otherwise leave the board frozen before its first frame
+        const check = () => {
+          if (started) return;
+          const r = board.getBoundingClientRect();
+          const vh = window.innerHeight || document.documentElement.clientHeight;
+          const ratio = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0)) / r.height;
+          if (ratio >= 0.4) {
+            started = true;
+            window.clearInterval(poll);
+            run();
+          }
+        };
+        const poll = window.setInterval(check, 250);
+        check();
+        board.querySelector("[data-emergence-restart]")?.addEventListener("click", () => {
+          run();
+        });
+      }
+      }
+    }
+  </script>

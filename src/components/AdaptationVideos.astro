@@ -1,0 +1,182 @@
+---
+/**
+ * AdaptationVideos — "What does pretraining buy on a new robot body?"
+ * Curated MiX-World rollouts after adaptation, per embodiment. One clip at a
+ * time (carousel): the test rollout plays with the Generated prediction on
+ * the left half and the ground truth on the right half, separated by a
+ * center divider. Embodiment tabs above; clip prev/next + counter in-frame.
+ */
+import site from "../data/site.json";
+
+const vids = site.adaptation.videos;
+const pads = (n: number) => String(n).padStart(2, "0");
+---
+
+<div class="adp" data-adp>
+  <div class="tabs" role="tablist" aria-label="Embodiments">
+    {
+      vids.embodiments.map((e, i) => (
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          aria-selected={i === 0 ? "true" : "false"}
+          data-adp-emb={i}
+        >
+          {e.label}
+        </button>
+      ))
+    }
+  </div>
+
+  {
+    vids.embodiments.map((e, i) => (
+      <div class="adp__emb" data-adp-panel={i} hidden={i !== 0}>
+        <script type="application/json" data-adp-clips set:html={JSON.stringify(e.clips)} />
+
+        <div class="media-frame adp__stage" data-adp-layout={e.layout} style={`--gt-start: ${e.id === "franka_single" ? 596 / 1178 * 100 : 604 / 1194 * 100}%;`}>
+          {e.layout === "split" && (
+            <>
+              <span class="adp__half-label adp__half-label--left">Generated</span>
+              <span class="adp__half-label adp__half-label--right">Ground truth</span>
+            </>
+          )}
+          <video
+            data-adp-video
+            src={e.clips[0].video}
+            poster={e.clips[0].poster}
+            controls
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            aria-label={
+              e.layout === "split"
+                ? `MiX-World rollout, ${e.label}: prediction left, ground truth right`
+                : `MiX-World rollout, ${e.label}: third-person camera view`
+            }
+          />
+          <button class="adp__nav adp__nav--prev" type="button" data-adp-prev aria-label="Previous clip">‹</button>
+          <button class="adp__nav adp__nav--next" type="button" data-adp-next aria-label="Next clip">›</button>
+        </div>
+      </div>
+    ))
+  }
+
+</div>
+
+<style>
+  .adp { margin-top: var(--space-4); }
+  .adp__legend {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: 0.9063rem;
+  }
+
+  .adp__stage {
+    position: relative;
+  }
+
+  .adp__stage video {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #000;
+  }
+
+  .adp__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(20, 18, 15, 0.4);
+    color: #fff;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+
+  .adp__nav:hover {
+    background: rgba(20, 18, 15, 0.6);
+  }
+
+  .adp__nav--prev {
+    left: 10px;
+  }
+
+  .adp__nav--next {
+    right: 10px;
+  }
+
+  .adp__half-label {
+    position: absolute;
+    top: 12px;
+    z-index: 6;
+    background: rgba(20, 18, 15, 0.55);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: var(--radius-pill);
+    padding: 0.2rem 0.65rem;
+    pointer-events: none;
+  }
+
+  .adp__half-label--left {
+    left: 12px;
+  }
+
+  .adp__half-label--right {
+    left: calc(var(--gt-start) + 12px);
+  }
+
+
+</style>
+
+<script>
+  const root = document.querySelector("[data-adp]");
+  if (root) {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-adp-emb]"));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>("[data-adp-panel]"));
+
+    // per-panel carousel: one clip visible at a time
+    panels.forEach((panel) => {
+      const video = panel.querySelector<HTMLVideoElement>("[data-adp-video]")!;
+      const dataEl = panel.querySelector<HTMLScriptElement>("[data-adp-clips]");
+      const clips: Array<{ video: string; poster: string; name: string }> = dataEl
+        ? JSON.parse(dataEl.textContent || "[]")
+        : [];
+      let idx = 0;
+
+      const loadClip = (i: number) => {
+        if (!clips.length) return;
+        idx = ((i % clips.length) + clips.length) % clips.length;
+        const c = clips[idx];
+        video.src = c.video;
+        video.poster = c.poster;
+        video.load();
+        video.play().catch(() => {});
+      };
+
+      panel.querySelector("[data-adp-prev]")?.addEventListener("click", () => loadClip(idx - 1));
+      panel.querySelector("[data-adp-next]")?.addEventListener("click", () => loadClip(idx + 1));
+    });
+
+    tabs.forEach((t, i) =>
+      t.addEventListener("click", () => {
+        tabs.forEach((b, k) => b.setAttribute("aria-selected", k === i ? "true" : "false"));
+        panels.forEach((p, k) => {
+          p.hidden = k !== i;
+          if (p.hidden) p.querySelectorAll("video").forEach((v) => v.pause());
+        });
+      })
+    );
+  }
+</script>

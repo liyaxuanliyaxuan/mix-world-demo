@@ -1,0 +1,447 @@
+---
+/**
+ * EmbodimentCarousel — "Different Robots, One Shared World" module, matching
+ * the original presentation: embodiment tabs, a main Generated
+ * clip with prev/next/restart controls, playback-speed buttons, a task
+ * counter, and a numbered thumbnail board whose rows wrap per family group
+ * (Overview = Highlights / Dual-Arm / Humanoid / Mobile). All clips are
+ * precomputed model predictions; no live inference.
+ */
+import site from "../data/site.json";
+const { carousel } = site;
+
+// flatten groups with a continuous per-tab task number
+const tabsPrepared = carousel.tabs.map((t) => {
+  let n = 0;
+  const groups = t.groups.map((g) => ({
+    ...g,
+    tasks: g.tasks.map((task) => ({ ...task, num: ++n })),
+  }));
+  return { ...t, groups, flat: groups.flatMap((g) => g.tasks) };
+});
+const first = tabsPrepared[0].flat[0];
+---
+
+<div class="carousel" data-carousel>
+  <script type="application/json" data-carousel-data set:html={JSON.stringify(tabsPrepared)} />
+  <div class="tabs" role="tablist" aria-label="Embodiment selector">
+    {
+      tabsPrepared.map((t, i) => (
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          aria-selected={i === 0 ? "true" : "false"}
+          aria-controls={`carousel-strip-${t.id}`}
+          data-carousel-tab={t.id}
+        >
+          {t.label}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="media-frame carousel__stage">
+    <span class="generated-flag">Generated</span>
+    <button class="carousel__nav carousel__nav--prev" type="button" data-carousel-prev aria-label="Previous video">‹</button>
+    <button class="carousel__nav carousel__nav--next" type="button" data-carousel-next aria-label="Next video">›</button>
+    <video
+      data-carousel-video
+      src={first.video}
+      poster={first.thumb}
+      controls
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-label={`Generated prediction: ${first.name}`}
+    ></video>
+  </div>
+
+  <div class="carousel__bar">
+    <span class="carousel__task" data-carousel-task>{first.name}</span>
+    <span class="carousel__controls">
+      <button type="button" class="carousel__restart" data-carousel-restart aria-label="Restart video">↻</button>
+      {
+        [1, 1.5, 2, 4].map((r) => (
+          <button type="button" class="carousel__speed" data-carousel-speed={r} aria-pressed={r === 1 ? "true" : "false"}>
+            {r}x
+          </button>
+        ))
+      }
+    </span>
+  </div>
+
+  {
+    tabsPrepared.map((t, ti) => (
+      <div
+        class="carousel__strip"
+        id={`carousel-strip-${t.id}`}
+        role="group"
+        aria-label={`${t.label} tasks`}
+        data-carousel-strip={t.id}
+        data-carousel-layout={t.layout}
+        hidden={ti !== 0}
+      >
+        {t.layout === "strip" && (
+          <div class="carousel__scroller">
+            <button class="carousel__scroll-btn carousel__scroll-btn--prev" type="button" data-carousel-scroll="-1" aria-label="Scroll thumbnails left">
+              ‹
+            </button>
+            <div class="carousel__track" data-carousel-track>
+              {t.flat.map((task) => (
+                <button
+                  type="button"
+                  class={`carousel__thumb carousel__thumb--strip${ti === 0 && task.num === 1 ? " is-active" : ""}`}
+                  data-carousel-num={task.num}
+                  aria-label={`Show video ${task.num}: ${task.name}`}
+                >
+                  <img src={task.thumb} alt="" loading="lazy" width={360} height={200} />
+                  <span class="carousel__thumb-num">{String(task.num).padStart(2, "0")}</span>
+                </button>
+              ))}
+            </div>
+            <button class="carousel__scroll-btn carousel__scroll-btn--next" type="button" data-carousel-scroll="1" aria-label="Scroll thumbnails right">
+              ›
+            </button>
+          </div>
+        )}
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .carousel__stage video {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: #000;
+    aspect-ratio: 16 / 9;
+    object-fit: cover; /* crop-to-fill: no pillarbox black bars */
+    transition: opacity 0.35s var(--ease-out), transform 0.35s var(--ease-out);
+  }
+
+  .carousel__stage.is-swapping video {
+    opacity: 0.3;
+    transform: scale(0.99);
+  }
+
+  .carousel__nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: rgba(20, 18, 15, 0.35);
+    color: #fff;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+
+  .carousel__nav:hover {
+    background: rgba(20, 18, 15, 0.55);
+  }
+
+  .carousel__nav--prev {
+    left: 12px;
+  }
+
+  .carousel__nav--next {
+    right: 12px;
+  }
+
+  .carousel__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    padding-top: var(--space-2);
+  }
+
+  .carousel__task {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+
+  .carousel__controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .carousel__restart,
+  .carousel__speed {
+    appearance: none;
+    border: var(--border-hairline);
+    background: transparent;
+    border-radius: var(--radius-pill);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+
+  .carousel__restart {
+    font-size: 0.875rem;
+  }
+
+  .carousel__speed[aria-pressed="true"] {
+    background: var(--color-pill-ink);
+    color: var(--color-pill-ink-text);
+    border-color: var(--color-pill-ink);
+    font-weight: 600;
+  }
+
+
+  .carousel__strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .carousel__track {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .carousel__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* long horizontal strip for family tabs (horizontal strip style) */
+  .carousel__scroller {
+    position: relative;
+  }
+
+  .carousel__track {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    padding-block: 2px;
+  }
+
+  .carousel__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carousel__scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    width: 2.2rem;
+    height: 2.2rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(20, 18, 15, 0.35);
+    color: #fff;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+
+  .carousel__scroll-btn:hover {
+    background: rgba(20, 18, 15, 0.55);
+  }
+
+  .carousel__scroll-btn--prev {
+    left: 8px;
+  }
+
+  .carousel__scroll-btn--next {
+    right: 8px;
+  }
+
+  .carousel__thumb.carousel__thumb--strip {
+    width: 186px;
+    opacity: 0.55;
+  }
+
+  .carousel__thumb.carousel__thumb--strip.is-active {
+    opacity: 1;
+  }
+
+  .carousel__thumb {
+    position: relative;
+    flex: none;
+    width: 106px;
+    appearance: none;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 0;
+    cursor: pointer;
+    background: var(--color-placeholder-bg);
+    transition: border-color var(--transition-fast), opacity var(--transition-fast);
+    opacity: 0.85;
+  }
+
+  .carousel__thumb:hover {
+    opacity: 1;
+  }
+
+  .carousel__thumb.is-active {
+    border-color: var(--color-pill-ink);
+    opacity: 1;
+  }
+
+  .carousel__thumb img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .carousel__thumb-num {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(20, 18, 15, 0.55);
+    border-radius: 6px;
+    padding: 0.05rem 0.35rem;
+  }
+</style>
+
+<script>
+  import { registerPlayer } from "../scripts/players";
+
+  interface CarouselTask { name: string; video: string; thumb: string; num: number }
+  interface CarouselGroup { name: string; tasks: CarouselTask[] }
+  interface CarouselTab { id: string; label: string; groups: CarouselGroup[]; flat: CarouselTask[] }
+
+  const root = document.querySelector<HTMLElement>("[data-carousel]");
+  if (root) {
+    const video = root.querySelector<HTMLVideoElement>("[data-carousel-video]")!;
+    registerPlayer(video, "carousel");
+
+    const tabBtns = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-carousel-tab]"));
+    const strips = Array.from(root.querySelectorAll<HTMLElement>("[data-carousel-strip]"));
+    const taskEl = root.querySelector<HTMLElement>("[data-carousel-task]")!;
+
+    let tabId = tabBtns[0]?.dataset.carouselTab ?? "";
+    let idx = 0;
+    let speed = 1;
+
+    const padNum = (n: number) => String(n).padStart(2, "0");
+
+    const currentStrip = () => strips.find((s) => s.dataset.carouselStrip === tabId);
+
+    const applySpeed = () => {
+      // a new resource resets playbackRate to defaultPlaybackRate, so set both
+      video.defaultPlaybackRate = speed;
+      video.playbackRate = speed;
+    };
+
+    const load = (i: number) => {
+      const strip = currentStrip();
+      const thumbs = strip
+        ? Array.from(strip.querySelectorAll<HTMLButtonElement>("[data-carousel-num]"))
+        : [];
+
+      if (!thumbs.length) {
+        // single-task tab (Overview): just the intro reel, no thumbnails
+        const tab = tabData.find((t) => t.id === tabId);
+        const task = tab?.flat[0];
+        if (task) {
+          video.src = task.video;
+          video.load();
+          taskEl.textContent = task.name;
+        }
+        applySpeed();
+        video.play().catch(() => {});
+        return;
+      }
+
+      idx = ((i % thumbs.length) + thumbs.length) % thumbs.length;
+      const btn = thumbs[idx];
+      const src = btn.getAttribute("data-carousel-src") ?? "";
+      const stage = root.querySelector<HTMLElement>(".carousel__stage");
+      stage?.classList.add("is-swapping");
+      video.src = src;
+      video.load();
+      thumbs.forEach((b) => b.classList.toggle("is-active", b === btn));
+      btn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+      taskEl.textContent = btn.getAttribute("aria-label")?.replace(/^Show video \d+: /, "") ?? "";
+      applySpeed();
+      // switching tasks is an explicit user request: try to play
+      video.play().catch(() => {});
+      video.addEventListener("playing", () => stage?.classList.remove("is-swapping"), { once: true });
+    };
+
+    const activateTab = (id: string) => {
+      tabId = id;
+      tabBtns.forEach((b) => b.setAttribute("aria-selected", b.dataset.carouselTab === id ? "true" : "false"));
+      strips.forEach((s) => (s.hidden = s.dataset.carouselStrip !== id));
+      load(0);
+    };
+
+    // stash per-thumb source for lookup from the serialized tab data
+    const dataEl = root.querySelector<HTMLScriptElement>("[data-carousel-data]");
+    const tabData: CarouselTab[] = dataEl ? JSON.parse(dataEl.textContent || "[]") : [];
+
+    // single-task tabs show no counter
+    const initialTab = tabData.find((t) => t.id === tabId);
+    root.querySelectorAll<HTMLButtonElement>("[data-carousel-num]").forEach((btn) => {
+      const tabOf = btn.closest("[data-carousel-strip]")?.getAttribute("data-carousel-strip");
+      const tab = tabData.find((t) => t.id === tabOf);
+      const num = Number(btn.dataset.carouselNum);
+      btn.setAttribute("data-carousel-src", tab?.flat.find((task) => task.num === num)?.video ?? "");
+      btn.addEventListener("click", () => {
+        if (tabOf !== tabId) activateTab(tabOf ?? tabId);
+        load(num - 1);
+      });
+    });
+
+    tabBtns.forEach((b) => b.addEventListener("click", () => activateTab(b.dataset.carouselTab ?? "")));
+    root.querySelector("[data-carousel-prev]")?.addEventListener("click", () => load(idx - 1));
+    root.querySelector("[data-carousel-next]")?.addEventListener("click", () => load(idx + 1));
+    root.querySelector("[data-carousel-restart]")?.addEventListener("click", () => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    });
+
+    // strip edge arrows scroll the thumbnail track of the visible strip
+    root.querySelectorAll<HTMLButtonElement>("[data-carousel-scroll]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const strip = currentStrip().querySelector(".carousel__track");
+        if (!strip) return;
+        strip.scrollBy({
+          left: Number(b.dataset.carouselScroll) * strip.clientWidth * 0.65,
+          behavior: "smooth",
+        });
+      })
+    );
+
+    root.querySelectorAll<HTMLButtonElement>("[data-carousel-speed]").forEach((b) =>
+      b.addEventListener("click", () => {
+        speed = Number(b.dataset.carouselSpeed);
+        applySpeed();
+        root.querySelectorAll("[data-carousel-speed]").forEach((o) =>
+          o.setAttribute("aria-pressed", o === b ? "true" : "false")
+        );
+      })
+    );
+  }
+</script>

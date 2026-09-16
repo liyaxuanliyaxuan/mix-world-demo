@@ -1,0 +1,328 @@
+---
+/**
+ * Action trajectories and predicted video share a centered media row.
+ * Condition descriptions sit below it so text wrapping cannot shift either panel.
+ * Same-start switches retain playback time (wrapping shorter clips); time
+ * reversal uses a different observation and starts a new timeline.
+ */
+import site from "../data/site.json";
+
+const { actions } = site;
+---
+
+<div class="acs" data-action-selector>
+  <script type="application/json" data-conditions-data set:html={JSON.stringify(actions.conditions.map((c) => ({ id: c.id, label: c.label, desc: c.desc, video: c.video, poster: c.poster, different_start: !!c.different_start })))} />
+  <div class="acs__grid">
+    <p class="acs__col-label acs__input-label">Input — actions</p>
+    <p class="acs__col-label acs__output-label">Output — predicted future</p>
+
+    <div class="acs__traj">
+      <div class="media-frame acs__traj-canvas">
+        <canvas data-condition-traj width="640" height="400" aria-label="Live end-effector positions for the selected action condition"></canvas>
+      </div>
+      <button class="acs__switch acs__switch--prev" type="button" data-condition-prev aria-label="Previous action condition">‹</button>
+      <button class="acs__switch acs__switch--next" type="button" data-condition-next aria-label="Next action condition">›</button>
+    </div>
+
+    <div class="acs__arrow" aria-hidden="true">
+      <svg viewBox="0 0 56 24" width="52" height="24">
+        <line x1="2" y1="12" x2="42" y2="12" stroke="currentColor" stroke-width="2.5" />
+        <path d="M40 4 L52 12 L40 20 Z" fill="currentColor" />
+      </svg>
+    </div>
+
+    <div class="media-frame acs__video">
+      <span class="generated-flag">Generated</span>
+      <video data-condition-video src={actions.conditions[0].video} poster={actions.conditions[0].poster}
+        controls muted loop playsinline preload="metadata"
+        aria-label={`Generated prediction, ${actions.conditions[0].label}`} />
+    </div>
+
+    <div class="acs__details">
+      <strong data-condition-name>{actions.conditions[0].label}</strong>
+      <span class="acs__flag" data-condition-flag hidden>Different initial observation</span>
+      <p data-condition-desc>{actions.conditions[0].desc}</p>
+    </div>
+  </div>
+  <p class="figure-caption">{actions.scope_note}</p>
+</div>
+
+<style>
+  .acs__grid {
+    display: grid;
+    /* Native aspect ratios: canvas 8:5, video 16:9; equal rendered heights. */
+    grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1.111111fr);
+    column-gap: var(--space-2);
+    row-gap: var(--space-1);
+    align-items: center;
+  }
+  .acs__col-label {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-faint);
+  }
+  .acs__input-label { grid-column: 1; grid-row: 1; }
+  .acs__output-label { grid-column: 3; grid-row: 1; }
+  .acs__traj { grid-column: 1; grid-row: 2; position: relative; min-width: 0; }
+  .acs__traj-canvas { background: #16140f; }
+  .acs__traj-canvas canvas { display: block; width: 100%; aspect-ratio: 8 / 5; }
+  .acs__video { grid-column: 3; grid-row: 2; min-width: 0; }
+  .acs__video video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+  .acs__arrow { grid-column: 2; grid-row: 2; justify-self: center; color: var(--color-accent); }
+  .acs__switch {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 8;
+    width: 2.5rem;
+    height: 2.9rem;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+  .acs__switch:hover { background: #bd7f3a; }
+  .acs__switch--prev { left: -14px; }
+  .acs__switch--next { right: -14px; }
+  .acs__details {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.8rem;
+    padding-top: var(--space-1);
+    font-size: 0.875rem;
+  }
+  .acs__details p { margin: 0; color: var(--color-text-secondary); }
+  .acs__flag {
+    font-size: 0.6875rem;
+    color: #8a5a12;
+    background: #f6e3c0;
+    border-radius: var(--radius-pill);
+    padding: 0.14rem 0.55rem;
+  }
+  @media (max-width: 900px) {
+    .acs__grid { grid-template-columns: minmax(0, 1fr); }
+    .acs__input-label { grid-column: 1; grid-row: 1; }
+    .acs__traj { grid-column: 1; grid-row: 2; }
+    .acs__arrow { grid-column: 1; grid-row: 3; transform: rotate(90deg); margin-block: var(--space-1); }
+    .acs__output-label { grid-column: 1; grid-row: 4; }
+    .acs__video { grid-column: 1; grid-row: 5; }
+    .acs__details { grid-row: 6; }
+    .acs__switch--prev { left: -6px; }
+    .acs__switch--next { right: -6px; }
+  }
+</style>
+
+<script>
+  import { registerPlayer } from "../scripts/players";
+
+  interface TrajSeries { t: number[]; left: { x: number[]; y: number[]; grip: number[] }; right: { x: number[]; y: number[]; grip: number[] }; bounds: { xmin: number; xmax: number; ymin: number; ymax: number }; duration_s: number }
+
+  const root = document.querySelector<HTMLElement>("[data-action-selector]");
+  if (root) {
+    const video = root.querySelector<HTMLVideoElement>("[data-condition-video]")!;
+    const canvas = root.querySelector<HTMLCanvasElement>("[data-condition-traj]")!;
+    const desc = root.querySelector<HTMLElement>("[data-condition-desc]")!;
+    registerPlayer(video, "actions");
+
+    const cache = new Map<string, TrajSeries>();
+    let current: TrajSeries | null = null;
+    let raf = 0;
+
+    async function loadTraj(id: string): Promise<TrajSeries> {
+      if (!cache.has(id)) {
+        const r = await fetch(`/media/actions/traj_${id}.json`);
+        cache.set(id, await r.json() as TrajSeries);
+      }
+      return cache.get(id)!;
+    }
+
+    // ---- canvas drawing -------------------------------------------------
+    const ctx = canvas.getContext("2d")!;
+    const W = 640, H = 400;
+    const PANELS = [
+      { arm: "left" as const, label: "LEFT GRIPPER", color: "#4da3ff", x: 22, y: 26, w: 290, h: 218 },
+      { arm: "right" as const, label: "RIGHT GRIPPER", color: "#ffab52", x: 328, y: 26, w: 290, h: 218 },
+    ];
+    const GRIP = { x: 22, y: H - 86, w: 290 * 2 + 16, h: 54 };
+    const INK = "#c9c4b6", GRID = "rgba(255,255,255,0.1)";
+
+    function fitCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth || 640;
+      canvas.width = w * dpr;
+      canvas.height = w * (H / W) * dpr;
+      ctx.setTransform(dpr * (w / W), 0, 0, dpr * (w / W), 0, 0);
+    }
+
+    function draw(traj: TrajSeries, t: number) {
+      const b = traj.bounds;
+      const n = traj.t.length;
+      const idx = Math.max(0, Math.min(n - 1, Math.round(t * 10)));
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "#16140f";
+      ctx.fillRect(0, 0, W, H);
+
+      for (const p of PANELS) {
+        ctx.strokeStyle = "rgba(255,255,255,0.16)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(p.x, p.y, p.w, p.h);
+        ctx.strokeStyle = GRID;
+        for (let g = 1; g < 4; g++) {
+          ctx.beginPath(); ctx.moveTo(p.x, p.y + (p.h * g) / 4); ctx.lineTo(p.x + p.w, p.y + (p.h * g) / 4); ctx.stroke();
+        }
+        for (let g = 1; g < 4; g++) {
+          ctx.beginPath(); ctx.moveTo(p.x + (p.w * g) / 4, p.y); ctx.lineTo(p.x + (p.w * g) / 4, p.y + p.h); ctx.stroke();
+        }
+        ctx.fillStyle = p.color;
+        ctx.font = "700 20px Inter, system-ui, sans-serif";
+        ctx.fillText(p.label, p.x, p.y - 10);
+
+        const xs = traj[p.arm].x, ys = traj[p.arm].y, gs = traj[p.arm].grip;
+        const px = p.x + ((xs[idx] - b.xmin) / (b.xmax - b.xmin)) * p.w;
+        const py = p.y + p.h - ((ys[idx] - b.ymin) / (b.ymax - b.ymin)) * p.h;
+
+        ctx.strokeStyle = "rgba(255,255,255,0.25)";
+        ctx.beginPath(); ctx.moveTo(p.x, py); ctx.lineTo(p.x + p.w, py); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(px, p.y); ctx.lineTo(px, p.y + p.h); ctx.stroke();
+
+        const r = 6 + gs[idx] * 4.5;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color; ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff"; ctx.fill();
+
+        ctx.fillStyle = INK;
+        ctx.font = "14px Inter, system-ui, sans-serif";
+        ctx.fillText(
+          `x ${xs[idx] >= 0 ? "+" : ""}${xs[idx].toFixed(2)}  y ${ys[idx] >= 0 ? "+" : ""}${ys[idx].toFixed(2)}`,
+          p.x, p.y + p.h + 20
+        );
+      }
+
+      // gripper open-fraction strips (time series)
+      for (const [p, frac] of [[PANELS[0], 0], [PANELS[1], 0.52]] as const) {
+        const g = traj[p.arm].grip;
+        const gx = GRIP.x + frac * GRIP.w;
+        const gw = GRIP.w * 0.48;
+        const gy = GRIP.y + GRIP.h;
+        ctx.strokeStyle = "rgba(255,255,255,0.16)";
+        ctx.strokeRect(gx, GRIP.y, gw, GRIP.h);
+        ctx.beginPath();
+        for (let i = 0; i <= idx; i++) {
+          const X = gx + (i / (n - 1)) * gw;
+          const Y = gy - g[i] * GRIP.h;
+          i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+        }
+        ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2.2; ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = INK;
+        ctx.font = "12px Inter, system-ui, sans-serif";
+        ctx.fillText(p.label, gx, GRIP.y - 6);
+      }
+      ctx.fillStyle = INK;
+      ctx.font = "12px Inter, system-ui, sans-serif";
+      ctx.fillText(`Gripper open fraction — 0 to ${traj.duration_s.toFixed(1)} s`, GRIP.x, H - 6);
+    }
+
+    function renderNow() {
+      if (current) draw(current, video.currentTime);
+    }
+    function loop() {
+      renderNow();
+      raf = requestAnimationFrame(loop);
+    }
+    function startLoop() {
+      if (!raf) raf = requestAnimationFrame(loop);
+    }
+    function stopLoop() {
+      if (raf) { cancelAnimationFrame(raf); raf = 0; renderNow(); }
+    }
+
+    video.addEventListener("play", startLoop);
+    video.addEventListener("pause", stopLoop);
+    video.addEventListener("ended", stopLoop);
+    video.addEventListener("seeked", renderNow);
+    window.addEventListener("resize", () => { fitCanvas(); renderNow(); });
+
+    // auto-play together (canvas + video) when the section is on screen;
+    // pause when it scrolls away. Suppressed for reduced-motion visitors.
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.35 && !document.hidden) {
+              video.play().catch(() => {});
+            } else if (!entry.isIntersecting && !video.paused) {
+              video.pause();
+            }
+          });
+        },
+        { threshold: 0.35 }
+      );
+      io.observe(video);
+    }
+
+    // ---- condition switching --------------------------------------------
+    async function setCondition(id: string) {
+      const traj = await loadTraj(id);
+      if (actionsList[condIdx]?.id !== id) return;
+      current = traj;
+      fitCanvas();
+      renderNow();
+    }
+
+    const dataEl = root.querySelector<HTMLScriptElement>("[data-conditions-data]");
+    const actionsList: { id: string; label: string; desc: string; video: string; poster: string; different_start: boolean }[] =
+      dataEl ? JSON.parse(dataEl.textContent || "[]") : [];
+    let condIdx = 0;
+    let pendingLoad: AbortController | undefined;
+
+    function applyCondition(i: number) {
+      const previous = actionsList[condIdx];
+      condIdx = ((i % actionsList.length) + actionsList.length) % actionsList.length;
+      const c = actionsList[condIdx];
+      const t = c.different_start || previous.different_start ? 0 : video.currentTime;
+      if (video.getAttribute("src") !== c.video) {
+        pendingLoad?.abort();
+        pendingLoad = new AbortController();
+        const { signal } = pendingLoad;
+        video.addEventListener("loadedmetadata", () => {
+          video.currentTime = Number.isFinite(video.duration) && video.duration > 0
+            ? t % video.duration : 0;
+        }, { once: true, signal });
+        video.addEventListener("canplay", () => {
+          if (!document.hidden) video.play().catch(() => {});
+        }, { once: true, signal });
+        video.src = c.video;
+        video.poster = c.poster;
+        video.load();
+      }
+      video.setAttribute("aria-label", `Generated prediction, ${c.label}`);
+      if (desc) desc.textContent = c.desc;
+      const nameEl = root.querySelector<HTMLElement>("[data-condition-name]");
+      if (nameEl) nameEl.textContent = c.label;
+      const flagEl = root.querySelector<HTMLElement>("[data-condition-flag]");
+      if (flagEl) flagEl.hidden = !c.different_start;
+      setCondition(c.id);
+    }
+
+    root.querySelector("[data-condition-prev]")?.addEventListener("click", () => applyCondition(condIdx - 1));
+    root.querySelector("[data-condition-next]")?.addEventListener("click", () => applyCondition(condIdx + 1));
+
+    // init: load default condition and draw frame 0
+    applyCondition(0);
+  }
+</script>

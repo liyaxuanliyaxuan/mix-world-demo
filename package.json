@@ -1,0 +1,16 @@
+{
+  "name": "mix-world-website",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:review": "astro build --mode review --outDir dist-review",
+    "build:public": "astro build --mode public --outDir dist-public",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "5.18.2"
+  }
+}

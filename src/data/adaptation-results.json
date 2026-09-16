@@ -1,0 +1,259 @@
+{
+  "provenance": {
+    "generated_by": "scripts/export_adaptation_data.py",
+    "sources": {
+      "seen_curves": {
+        "../iclr2027-mixworld/artifacts/rq2_fixed_transfer_ssim.json": "434fac8c8a192768",
+        "../iclr2027-mixworld/artifacts/rq2_mobile_transfer_ssim.json": "0383cbc27ded3cf5",
+        "../iclr2027-mixworld/artifacts/rq2_humanoid_transfer_ssim.json": "97eb0e2dfe5e7b97"
+      },
+      "unseen_rows": {
+        "../iclr2027-mixworld/artifacts/rq2_final_20260914/measured_rows.json": "b4f544ee1d62c143"
+      }
+    },
+    "note": "All values read programmatically from measurement artifacts; see claims.json for approval state."
+  },
+  "seen": [
+    {
+      "id": "fixed",
+      "label": "Fixed-base",
+      "task": "sort_and_fold_socks",
+      "validation_episodes": 8,
+      "metric": "mean composite SSIM over the matched three-view validation rollouts",
+      "points": [
+        {
+          "pct": 12.5,
+          "step": 1000,
+          "mix": 0.676,
+          "wan": 0.392
+        },
+        {
+          "pct": 25.0,
+          "step": 2000,
+          "mix": 0.692,
+          "wan": 0.456
+        },
+        {
+          "pct": 37.5,
+          "step": 3000,
+          "mix": 0.689,
+          "wan": 0.479
+        },
+        {
+          "pct": 50.0,
+          "step": 4000,
+          "mix": 0.7,
+          "wan": 0.48
+        },
+        {
+          "pct": 62.5,
+          "step": 5000,
+          "mix": 0.703,
+          "wan": 0.546
+        },
+        {
+          "pct": 75.0,
+          "step": 6000,
+          "mix": 0.705,
+          "wan": 0.56
+        },
+        {
+          "pct": 87.5,
+          "step": 7000,
+          "mix": 0.709,
+          "wan": 0.595
+        },
+        {
+          "pct": 100.0,
+          "step": 8000,
+          "mix": 0.712,
+          "wan": 0.569
+        }
+      ]
+    },
+    {
+      "id": "mobile",
+      "label": "Mobile-base",
+      "task": "mount_list",
+      "validation_episodes": 8,
+      "metric": "mean composite SSIM over the matched three-view validation rollouts",
+      "points": [
+        {
+          "pct": 20.0,
+          "step": 1000,
+          "mix": 0.664,
+          "wan": 0.519
+        },
+        {
+          "pct": 40.0,
+          "step": 2000,
+          "mix": 0.702,
+          "wan": 0.545
+        },
+        {
+          "pct": 60.0,
+          "step": 3000,
+          "mix": 0.713,
+          "wan": 0.549
+        },
+        {
+          "pct": 80.0,
+          "step": 4000,
+          "mix": 0.713,
+          "wan": 0.575
+        },
+        {
+          "pct": 100.0,
+          "step": 5000,
+          "mix": 0.722,
+          "wan": 0.592
+        }
+      ]
+    },
+    {
+      "id": "humanoid",
+      "label": "Humanoid (G1)",
+      "task": "sofa_wuji",
+      "validation_episodes": 1,
+      "metric": "mean composite RGB SSIM over frames 0--240 inclusive (five deduplicated chunks)",
+      "points": [
+        {
+          "pct": 20.0,
+          "step": 572,
+          "mix": 0.642,
+          "wan": 0.419
+        },
+        {
+          "pct": 40.0,
+          "step": 1144,
+          "mix": 0.695,
+          "wan": 0.42
+        },
+        {
+          "pct": 60.0,
+          "step": 1716,
+          "mix": 0.694,
+          "wan": 0.421
+        },
+        {
+          "pct": 80.0,
+          "step": 2288,
+          "mix": 0.684,
+          "wan": 0.453
+        },
+        {
+          "pct": 100.0,
+          "step": 2860,
+          "mix": 0.699,
+          "wan": 0.478
+        }
+      ]
+    }
+  ],
+  "unseen": [
+    {
+      "id": "franka_dual",
+      "label": "Dual-arm Franka",
+      "env": "RoboTwin 2.0",
+      "color": "#0c797a",
+      "budgets": [
+        {
+          "demos": 1,
+          "updates": 100,
+          "wan_psnr": 16.17,
+          "mix_psnr": 17.88,
+          "gain": 1.7,
+          "one_shot": true
+        },
+        {
+          "demos": 10,
+          "updates": 3000,
+          "wan_psnr": 19.67,
+          "mix_psnr": 22.36,
+          "gain": 2.69,
+          "one_shot": false
+        },
+        {
+          "demos": 50,
+          "updates": 3000,
+          "wan_psnr": 19.58,
+          "mix_psnr": 22.01,
+          "gain": 2.43,
+          "one_shot": false
+        },
+        {
+          "demos": 100,
+          "updates": 3000,
+          "wan_psnr": 19.4,
+          "mix_psnr": 22.12,
+          "gain": 2.72,
+          "one_shot": false
+        }
+      ]
+    },
+    {
+      "id": "ur5_dual",
+      "label": "Dual-arm UR5",
+      "env": "RoboTwin 2.0",
+      "color": "#9b5ead",
+      "budgets": [
+        {
+          "demos": 1,
+          "updates": 100,
+          "wan_psnr": 18.05,
+          "mix_psnr": 20.81,
+          "gain": 2.76,
+          "one_shot": true
+        },
+        {
+          "demos": 10,
+          "updates": 1000,
+          "wan_psnr": 19.96,
+          "mix_psnr": 23.53,
+          "gain": 3.57,
+          "one_shot": false
+        },
+        {
+          "demos": 100,
+          "updates": 1000,
+          "wan_psnr": 18.86,
+          "mix_psnr": 23.44,
+          "gain": 4.58,
+          "one_shot": false
+        }
+      ]
+    },
+    {
+      "id": "franka_single",
+      "label": "Single-arm Franka",
+      "env": "LIBERO",
+      "color": "#5b728c",
+      "budgets": [
+        {
+          "demos": 1,
+          "updates": 100,
+          "wan_psnr": 17.55,
+          "mix_psnr": 17.77,
+          "gain": 0.22,
+          "one_shot": true
+        },
+        {
+          "demos": 10,
+          "updates": 100,
+          "wan_psnr": 17.67,
+          "mix_psnr": 18.21,
+          "gain": 0.54,
+          "one_shot": false
+        },
+        {
+          "demos": 40,
+          "updates": 100,
+          "wan_psnr": 16.84,
+          "mix_psnr": 17.74,
+          "gain": 0.9,
+          "one_shot": false
+        }
+      ]
+    }
+  ]
+}

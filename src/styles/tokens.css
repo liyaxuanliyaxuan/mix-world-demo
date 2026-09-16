@@ -1,0 +1,59 @@
+/* MiX-World design tokens
+   Palette & type reference: team design language (current-robotics research blog)
+   + structural reference: robodojo-benchmark.com (nav, rounded media blocks) */
+:root {
+  /* color */
+  --color-bg: #faf9f5;            /* warm white */
+  --color-surface: #ffffff;
+  --color-ink: #23201c;           /* warm near-black */
+  --color-text: var(--color-ink);
+  --color-text-secondary: rgba(35, 32, 28, 0.62);
+  --color-text-faint: rgba(35, 32, 28, 0.45);
+  --color-accent: #e8a04f;        /* brand orange (kickers, small highlights) */
+  --color-accent-ink: #b06e1e;    /* darker orange for text links / focus on light bg */
+  --color-accent-soft: #f7ecdd;
+  --color-border: rgba(35, 32, 28, 0.12);
+  --color-border-strong: rgba(35, 32, 28, 0.22);
+  --color-pill-ink: #23201c;      /* active tab pill */
+  --color-pill-ink-text: #faf9f5;
+  --color-placeholder-bg: #efede6;
+  --color-dev-banner-bg: #f6e7c9;
+  --color-dev-banner-text: #6b5312;
+  --color-scrim: linear-gradient(
+    to top,
+    rgba(20, 18, 15, 0.72) 0%,
+    rgba(20, 18, 15, 0.28) 34%,
+    rgba(20, 18, 15, 0) 62%
+  );
+
+  /* type */
+  --font-display: "Source Serif 4", ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --text-body: 1.0625rem; /* 17px */
+  --text-body-mobile: 1rem; /* 16px */
+  --leading-body: 1.6;
+  --leading-display: 1.18;
+
+  /* layout */
+  --max-media-width: 1160px;
+  --max-text-width: 700px;
+
+  /* space scale 8/16/24/40/64/96 */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 64px;
+  --space-6: 96px;
+
+  /* shape & motion */
+  --radius-media: 20px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+  --border-hairline: 1px solid var(--color-border);
+  --transition-fast: 180ms ease;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-media: 0 1px 2px rgba(35, 32, 28, 0.05),
+    0 12px 32px rgba(35, 32, 28, 0.07);
+}

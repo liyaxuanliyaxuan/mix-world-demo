@@ -1,0 +1,240 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ResearchSection from "../components/ResearchSection.astro";
+import BlogHero from "../components/BlogHero.astro";
+import EmbodimentCarousel from "../components/EmbodimentCarousel.astro";
+import MultiViewGrid from "../components/MultiViewGrid.astro";
+import ActionConditionSelector from "../components/ActionConditionSelector.astro";
+import AdaptationComparison from "../components/AdaptationComparison.astro";
+import AdaptationVideos from "../components/AdaptationVideos.astro";
+import EmergenceSection from "../components/EmergenceSection.astro";
+import SceneGeneralization from "../components/SceneGeneralization.astro";
+import site from "../data/site.json";
+
+const { project, sections, multiview, method, temporal } = site;
+const year = new Date().getFullYear();
+---
+
+<BaseLayout
+  title={`${project.name}: ${project.formal_subtitle}`}
+  description={project.description}
+>
+  <BlogHero />
+
+  <div class="container">
+    <figure class="hero-figure media-frame" style="margin-block: var(--space-4) 0;">
+      <img
+        src="/media/figures/hero_paper.png"
+        alt="MiX-World hero figure: cross-embodiment experience feeding one unified world model, enabling long-horizon multi-view futures, prediction in unseen scenes, and few-shot adaptation to new robot arms."
+        loading="eager"
+        data-lightbox
+        data-lightbox-caption="MiX-World — cross-embodiment experience, long-horizon multi-view futures, unseen scenes, and few-shot adaptation."
+      />
+    </figure>
+  </div>
+
+  <main>
+   <ResearchSection
+      id="demos"
+      kicker={sections.demos.kicker}
+      title={sections.demos.title}
+      lead={site.carousel.lead}
+    >
+      <EmbodimentCarousel />
+    </ResearchSection>
+
+    <ResearchSection
+      id="actions"
+      kicker={sections.actions.kicker}
+      title={sections.actions.title}
+      lead={site.actions.lead}
+    >
+      <ActionConditionSelector />
+    </ResearchSection>
+
+    <ResearchSection
+      id="views"
+      kicker={sections.views.kicker}
+      title={sections.views.title}
+      lead={multiview.lead}
+    >
+      <div class="mv-carousel" data-mv-carousel>
+        <div class="mv-carousel__stage">
+          {multiview.grids.map((g, i) => (
+            <div class="mv-slide" data-mv-slide={i} hidden={i !== 0}>
+              <MultiViewGrid grid={g} />
+            </div>
+          ))}
+          <button class="mv-carousel__nav mv-carousel__nav--prev" type="button" data-mv-prev aria-label="Previous example">‹</button>
+          <button class="mv-carousel__nav mv-carousel__nav--next" type="button" data-mv-next aria-label="Next example">›</button>
+        </div>
+      </div>
+    </ResearchSection>
+
+    <ResearchSection
+      id="adaptation"
+      kicker={sections.adaptation.kicker}
+      title={sections.adaptation.title}
+      lead={site.adaptation.lead}
+    >
+      <AdaptationComparison />
+      <AdaptationVideos />
+    </ResearchSection>
+
+    <ResearchSection
+      id="generalization"
+      kicker={sections.generalization.kicker}
+      title={sections.generalization.title}
+      lead={site.generalization.lead}
+    >
+      <SceneGeneralization />
+    </ResearchSection>
+
+    <ResearchSection
+      id="temporal"
+      kicker="Event prediction · physical-time alignment"
+      title="Predicting events at the right physical times"
+      lead="Brief events can fall between uniformly sampled frames. EAS samples more densely around events and less densely where little changes, and TA-RoPE anchors every sampled frame to physical time — so predictions line up with the reference at matched physical times."
+    >
+      {
+        temporal.videos_available ? (
+          <figure class="media-frame" style="margin: 0;">
+            <video
+              src={temporal.video}
+              poster={temporal.poster}
+              width="1824"
+              height="404"
+              controls muted loop playsinline preload="metadata"
+              aria-label="Synchronized ceiling-view comparison: ground truth, fixed-rate baseline, and EAS with TA-RoPE at matched physical times"
+            />
+          </figure>
+        ) : (
+          <figure class="media-frame" style="margin: 0;">
+            <span class="generated-flag">Static preview</span>
+            <img
+              src={temporal.strip_fallback}
+              alt="Predictions versus ground truth and a fixed-rate baseline at matched physical times during base rotation: rows show ground truth, fixed-rate baseline, and multi-scale (EAS) with TA-RoPE; columns show four matched physical times."
+              loading="lazy"
+            />
+          </figure>
+        )
+      }
+      <p class="figure-caption">{temporal.caption_note}</p>
+    </ResearchSection>
+
+    <ResearchSection
+      id="emergence"
+      kicker={sections.emergence.kicker}
+      title={sections.emergence.title}
+      lead={site.emergence.intro}
+    >
+      <EmergenceSection />
+    </ResearchSection>
+
+    <ResearchSection
+      id="method"
+      kicker={sections.method.kicker}
+      title={sections.method.title}
+      lead={method.caption_draft}
+    >
+      <div class="media-frame">
+        <img src={method.figure_src} alt={method.figure_alt} loading="lazy" />
+      </div>
+      <ul class="method-points">
+        {method.points.map((point) => (
+          <li><strong>{point.name}.</strong> {point.text}</li>
+        ))}
+      </ul>
+    </ResearchSection>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>{site.footer}</p>
+      <p>
+        © {year} MiX-World · Anonymous research preview
+      </p>
+    </div>
+  </footer>
+
+  <style>
+    .method-points {
+      color: var(--color-text-secondary);
+      padding-left: 1.25rem;
+      margin-top: var(--space-2);
+    }
+
+    .method-points li + li {
+      margin-top: var(--space-1);
+    }
+
+    /* left/right carousel for the multi-view examples */
+    .mv-carousel__stage {
+      position: relative;
+    }
+
+    .mv-carousel__nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20;
+      width: 2.6rem;
+      height: 2.6rem;
+      border: none;
+      border-radius: 50%;
+      background: rgba(20, 18, 15, 0.45);
+      color: #fff;
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background-color var(--transition-fast);
+    }
+
+    .mv-carousel__nav:hover {
+      background: rgba(20, 18, 15, 0.65);
+    }
+
+    .mv-carousel__nav--prev {
+      left: 14px;
+    }
+
+    .mv-carousel__nav--next {
+      right: 14px;
+    }
+
+
+    .gen-figs {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+  </style>
+
+  <script>
+    import { registerAllVideos } from "../scripts/players";
+    registerAllVideos();
+
+    // multi-view example carousel: one PiP group visible at a time; the
+    // group's own IntersectionObserver plays it when shown and pauses the
+    // hidden ones
+    const root = document.querySelector("[data-mv-carousel]");
+    if (root) {
+      const slides = Array.from(root.querySelectorAll("[data-mv-slide]"));
+      let idx = 0;
+      const show = (i: number) => {
+        idx = ((i % slides.length) + slides.length) % slides.length;
+        slides.forEach((s, k) => (s.hidden = k !== idx));
+        const slide = slides[idx];
+        slide.querySelectorAll<HTMLElement>(".mv-cell").forEach((c, k) =>
+          c.style.setProperty("--i", String(k))
+        );
+        slide.classList.remove("is-entering");
+        void slide.offsetWidth;
+        slide.classList.add("is-entering");
+      };
+      root.querySelector("[data-mv-prev]")?.addEventListener("click", () => show(idx - 1));
+      root.querySelector("[data-mv-next]")?.addEventListener("click", () => show(idx + 1));
+    }
+  </script>
+</BaseLayout>

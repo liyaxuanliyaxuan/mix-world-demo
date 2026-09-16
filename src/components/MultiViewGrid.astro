@@ -1,0 +1,242 @@
+---
+/**
+ * MultiViewGrid — "Maintaining Consistency Across Views", matching the reference
+ * original view layout: one large primary view plus a stacked column of the
+ * remaining camera views, one Generated flag per group, and a caption +
+ * playback-speed row below. The group plays together (synchronized views are
+ * one controlled playback group) and pauses offscreen.
+ */
+interface ViewItem {
+  label: string;
+  video: string;
+}
+interface Grid {
+  id: string;
+  caption: string;
+  main: ViewItem;
+  side: ViewItem[];
+}
+interface Props {
+  grid: Grid;
+}
+const { grid } = Astro.props;
+const posterOf = (src: string) => src.replace(/\.mp4$/, ".jpg");
+---
+
+<figure class="mv-block" style="margin: 0;">
+  <div class="media-frame mv-frame" data-mv-group={grid.id} data-side-count={String(grid.side.length)}>
+    <span class="generated-flag">Generated</span>
+    <div class="mv-layout" data-mv-side={grid.side_position}>
+      <div class="mv-main">
+        <video
+          src={grid.main.video}
+          poster={posterOf(grid.main.video)}
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-label={`${grid.main.label}, generated prediction`}
+        />
+        <span class="mv-cell__label">{grid.main.label}</span>
+      </div>
+      <div class="mv-side">
+        {
+          grid.side.map((s) => (
+            <div class="mv-cell">
+              <video src={s.video} poster={posterOf(s.video)} muted loop playsinline preload="metadata" aria-label={`${s.label}, generated prediction`} />
+              <span class="mv-cell__label">{s.label}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+  <figcaption class="mv-caption">
+    <span>{grid.caption}</span>
+    <span class="mv-speed" role="group" aria-label="Playback speed">
+      {[1, 1.5, 2, 4].map((r) => (
+        <button type="button" data-mv-speed={r} aria-pressed={r === 1 ? "true" : "false"}>{r}x</button>
+      ))}
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  /* picture-in-picture: main view fills the card, small views float above it
+     in a stacked column, white-edged with shadow — proportions follow the reference design */
+  .mv-layout {
+    position: relative;
+  }
+
+  .mv-main video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.87;
+    object-fit: cover;
+    background: #000;
+  }
+
+  .mv-side {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24.5%;
+    display: grid;
+    gap: 14px;
+    z-index: 5;
+  }
+
+  .mv-layout[data-mv-side="right"] .mv-side {
+    right: 2.4%;
+  }
+
+  .mv-layout[data-mv-side="left"] .mv-side {
+    left: 2.4%;
+  }
+
+  .mv-cell {
+    position: relative;
+    border: 3px solid #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  .mv-cell video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.45;
+    object-fit: cover;
+    background: #000;
+  }
+
+  .mv-cell__label {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 4;
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(20, 18, 15, 0.55);
+    border-radius: 5px;
+    padding: 0.08rem 0.45rem;
+    pointer-events: none;
+  }
+
+  .mv-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+  }
+
+  .mv-speed {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .mv-speed button {
+    appearance: none;
+    border: var(--border-hairline);
+    background: transparent;
+    border-radius: var(--radius-pill);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+
+  .mv-speed button[aria-pressed="true"] {
+    background: var(--color-pill-ink);
+    color: var(--color-pill-ink-text);
+    border-color: var(--color-pill-ink);
+    font-weight: 600;
+  }
+
+  @media (max-width: 640px) {
+    .mv-side {
+      width: 34%;
+      gap: 8px;
+    }
+
+    .mv-cell {
+      border-width: 2px;
+      border-radius: 7px;
+    }
+
+    .mv-cell video {
+      aspect-ratio: 1.2;
+    }
+  }
+</style>
+
+<script>
+  import { registerPlayer } from "../scripts/players";
+
+  /**
+   * Synchronized multi-view group = ONE controlled playback group: views start
+   * together when the group enters the viewport, pause together offscreen,
+   * and speed buttons apply to every view in the group.
+   */
+  document.querySelectorAll<HTMLElement>("[data-mv-group]").forEach((group) => {
+    const videos = Array.from(group.querySelectorAll<HTMLVideoElement>("video"));
+    videos.forEach((v) =>
+      registerPlayer(v, group.dataset.mvGroup ?? "mv", { skipOffscreenPause: true })
+    );
+
+    group.querySelectorAll<HTMLButtonElement>("[data-mv-speed]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const rate = Number(b.dataset.mvSpeed);
+        videos.forEach((v) => (v.playbackRate = rate));
+        group
+          .querySelectorAll("[data-mv-speed]")
+          .forEach((o) => o.setAttribute("aria-pressed", o === b ? "true" : "false"));
+      })
+    );
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let started = false;
+    let eligible = false;
+    const playWhenReady = (v: HTMLVideoElement) => {
+      if (!eligible || document.hidden) return;
+      if (v.readyState >= 2) {
+        v.play().catch(() => {});
+      } else {
+        v.addEventListener(
+          "canplay",
+          () => {
+            if (!eligible || document.hidden || !v.paused) return;
+            v.play().catch(() => {});
+          },
+          { once: true }
+        );
+      }
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          eligible = entry.isIntersecting && entry.intersectionRatio >= 0.35;
+          if (eligible) {
+            if (!started) {
+              started = true;
+              videos.forEach((v) => (v.currentTime = 0));
+            }
+            videos.forEach(playWhenReady);
+          } else if (!entry.isIntersecting) {
+            videos.forEach((v) => v.pause());
+          }
+        });
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(group);
+  });
+</script>

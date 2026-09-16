@@ -1,0 +1,253 @@
+---
+/**
+ * BlogHero — full-bleed dark opening module:
+ * the animated color-band background video with kicker + serif title overlaid
+ * lower-left. Anonymous review build: identity fields are intentionally absent
+ * for the anonymous build.
+ */
+import site from "../data/site.json";
+const { project } = site;
+// animated hero background (20 s, loops muted); static fallback
+// bands are painted by CSS under prefers-reduced-motion
+// hero background clips loop muted behind the title
+const HERO_ROTATION = [
+  "/media/showcase/hero_bg.mp4",
+  "/media/showcase/tasks/humanoid_pillow_h03_ego.mp4",
+  "/media/showcase/tasks/fixed_beer_new.mp4",
+  "/media/showcase/tasks/mobile_throw_cup.mp4",
+];
+---
+
+<section class="blog-hero" id="top" data-blog-hero>
+  <div class="blog-hero__bg-stack" data-hero-bg-stack aria-hidden="true">
+    {HERO_ROTATION.map((src, i) => (
+      <video
+        class={`blog-hero__bg${i === 0 ? " is-active" : ""}`}
+        src={src}
+        muted
+        loop
+        playsinline
+        preload={i === 0 ? "auto" : "metadata"}
+        data-hero-bg-video
+        aria-hidden="true"
+        tabindex="-1"
+      />
+    ))}
+  </div>
+  <div class="blog-hero__scrim" aria-hidden="true"></div>
+  <div class="blog-hero__content container">
+    <h1 class="blog-hero__title hero-anim" style="animation-delay: 280ms;">
+      {project.name}
+    </h1>
+    <p class="blog-hero__subtitle hero-anim" style="animation-delay: 420ms;">
+      {project.formal_subtitle}
+    </p>
+    <p class="blog-hero__desc hero-anim" style="animation-delay: 560ms;">
+      {project.description}
+    </p>
+    <p class="blog-hero__meta hero-anim" style="animation-delay: 700ms;">{project.meta}</p>
+  </div>
+  <a class="blog-hero__scroll" href="#demos" aria-label="Scroll to content">
+    <span aria-hidden="true"></span>
+  </a>
+</section>
+
+<style>
+  .blog-hero {
+    position: relative;
+    background: #0d0c0a;
+    overflow: hidden;
+    /* fill the entire first viewport */
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+  }
+
+  .blog-hero__bg-stack {
+    position: absolute;
+    inset: 0;
+  }
+
+  .blog-hero__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+
+  .blog-hero__bg.is-active {
+    opacity: 0.85;
+  }
+
+  .blog-hero__scrim {
+    position: absolute;
+    inset: 0;
+    /* uniform dim so the mosaic wall reads as one calm texture (GigaWorld
+       style), deepening toward the lower-left text block */
+    background: linear-gradient(
+      to top,
+      rgba(10, 9, 7, 0.78) 0%,
+      rgba(13, 16, 26, 0.55) 55%,
+      rgba(13, 16, 26, 0.45) 100%
+    );
+  }
+
+  .blog-hero__content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    text-align: center;
+    padding-block: clamp(4rem, 9vw, 7rem) clamp(3rem, 7vw, 5.5rem);
+  }
+
+  .blog-hero__kicker {
+    color: var(--color-accent);
+    font-size: 0.875rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin: 0 0 var(--space-2);
+  }
+
+  .blog-hero__title {
+    font-family: var(--font-display);
+    color: #fff;
+    font-size: clamp(3.25rem, 7vw, 5.75rem);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+
+  .blog-hero__subtitle {
+    font-family: var(--font-display);
+    color: rgba(255, 255, 255, 0.96);
+    font-size: clamp(1.5rem, 3vw, 2.625rem);
+    line-height: 1.22;
+    letter-spacing: -0.01em;
+    margin: var(--space-2) auto 0;
+    max-width: 40ch;
+  }
+
+  .blog-hero__desc {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: clamp(1rem, 1.4vw, 1.1875rem);
+    line-height: 1.65;
+    max-width: 60ch;
+    margin: var(--space-3) auto 0;
+  }
+
+  .blog-hero__meta {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8438rem;
+    margin: var(--space-3) 0 0;
+  }
+
+  .blog-hero__scroll {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    z-index: 3;
+    width: 28px;
+    height: 28px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .blog-hero__scroll span {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    margin: 4px auto 0;
+    animation: chevron-drop 1.7s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blog-hero__bg {
+      display: none;
+    }
+
+    .blog-hero {
+      background:
+        linear-gradient(90deg, #2a130d 0 12%, #2a5c46 12% 30%, #b9c878 30% 48%, #17123f 48% 66%, #6d2440 66% 84%, #4a6a80 84% 100%);
+    }
+  }
+</style>
+
+<script>
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const hero = document.querySelector<HTMLElement>("[data-blog-hero]");
+  const bgVideos = Array.from(
+    document.querySelectorAll<HTMLVideoElement>("[data-hero-bg-video]")
+  );
+  let active = 0;
+  let heroVisible = false;
+
+  const startActive = () => {
+    bgVideos.forEach((v, i) => {
+      if (i === active && heroVisible && !document.hidden && !reduce) {
+        v.play().catch(() => {});
+      } else if (!v.paused) {
+        v.pause();
+      }
+    });
+  };
+
+  // rotate backgrounds: crossfade to the next clip every 7 s
+  if (bgVideos.length > 1 && !reduce) {
+    window.setInterval(() => {
+      if (!heroVisible || document.hidden) return;
+      const prev = bgVideos[active];
+      active = (active + 1) % bgVideos.length;
+      const next = bgVideos[active];
+      next.play().catch(() => {});
+      prev.classList.remove("is-active");
+      next.classList.add("is-active");
+      window.setTimeout(() => {
+        if (!prev.classList.contains("is-active")) prev.pause();
+      }, 1100);
+    }, 7000);
+  } else if (bgVideos.length) {
+    bgVideos[0].classList.add("is-active");
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) bgVideos.forEach((v) => v.pause());
+    else startActive();
+  });
+
+  // Background playback is local to the hero and stops completely offscreen.
+  if (hero && !reduce) {
+    const observer = new IntersectionObserver(([entry]) => {
+      heroVisible = entry.isIntersecting;
+      startActive();
+    });
+    observer.observe(hero);
+  }
+
+  // subtle parallax: content drifts up faster than the background bands
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const content = document.querySelector<HTMLElement>(".blog-hero__content");
+    const bg = document.querySelector<HTMLElement>(".blog-hero__bg-stack");
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const y = window.scrollY;
+        const h = window.innerHeight;
+        if (y > h) return;
+        if (bg) bg.style.transform = `translateY(${y * 0.16}px)`;
+        if (content) {
+          content.style.transform = `translateY(${y * 0.3}px)`;
+          content.style.opacity = String(1 - Math.min(y / (h * 0.72), 0.8));
+        }
+      });
+    };
+    addEventListener("scroll", onScroll, { passive: true });
+  }
+</script>

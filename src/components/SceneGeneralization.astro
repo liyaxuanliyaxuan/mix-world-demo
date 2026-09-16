@@ -1,0 +1,199 @@
+---
+/**
+ * SceneGeneralization — "Predicting in scenes it has never seen".
+ * Two platforms. Selection is via a bottom thumbnail strip:
+ * the first thumbnail is the unedited SOURCE scene — the real recorded
+ * video fetched from the training servers (same timeline as the
+ * predictions) — followed by one thumbnail per constructed first-frame edit
+ * whose prediction video plays in the main frame.
+ *
+ * Guardrail: the source reference is the real future of the UNEDITED scene;
+ * it is never presented as a ground truth for the edited scenes.
+ */
+import site from "../data/site.json";
+const { generalization } = site;
+---
+
+{
+  generalization.platforms.map((plat, pi) => (
+    <div class="gen-platform" data-gen-platform={plat.id}>
+      <h3 class="gen-platform__name">{plat.name}</h3>
+      <p class="gen-platform__env">{plat.env_note}</p>
+
+      <div class="media-frame gen-media__video">
+        <span class="generated-flag">Generated</span>
+        <video
+          data-gen-video
+          src={plat.conditions[0].video}
+          poster={plat.conditions[0].poster}
+          controls
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-label={`MiX-World prediction, ${plat.conditions[0].label}`}
+        />
+      </div>
+
+      {/* selection thumbnails: source scene + one per edited condition */}
+      <div class="gen-strip" role="group" aria-label={`${plat.name} scenes`}>
+        <button
+          type="button"
+          class="gen-thumb"
+          data-gen-video={plat.source.video}
+          data-gen-poster={plat.source.poster}
+          data-gen-label={plat.source.label}
+          data-gen-role="source"
+          aria-label={`Show ${plat.source.label} — recorded video`}
+        >
+          <img src={plat.source.poster} alt="" loading="lazy" width={360} height={200} />
+          <span class="gen-thumb__label">Source scene</span>
+        </button>
+        {plat.conditions.map((c, ci) => (
+          <button
+            type="button"
+            class={`gen-thumb${ci === 0 ? " is-active" : ""}`}
+            data-gen-video={c.video}
+            data-gen-poster={c.poster}
+            data-gen-label={c.label}
+            data-gen-role="edited"
+            aria-label={`Show prediction: ${c.label}`}
+          >
+            <img src={c.initial} alt="" loading="lazy" width={360} height={200} />
+            <span class="gen-thumb__label">{c.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {pi < generalization.platforms.length - 1 && <hr class="gen-divider" />}
+    </div>
+  ))
+}
+
+<div class="text-block">
+  <p class="figure-caption">{generalization.scope_note}</p>
+  <p class="figure-caption">{generalization.platforms[0].source_note}</p>
+</div>
+
+<style>
+  .gen-platform {
+    margin-bottom: var(--space-4);
+  }
+
+  .gen-platform__name {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin: 0 0 2px;
+  }
+
+  .gen-platform__env {
+    color: var(--color-text-faint);
+    font-size: 0.8125rem;
+    margin: 0 0 var(--space-2);
+  }
+
+  .gen-media__video video {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #000;
+  }
+
+  /* selection thumbnails: source scene + edited conditions */
+  .gen-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: var(--space-2);
+  }
+
+  .gen-thumb {
+    position: relative;
+    flex: none;
+    width: 148px;
+    appearance: none;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 0;
+    cursor: pointer;
+    background: var(--color-placeholder-bg);
+    opacity: 0.6;
+    transition: border-color var(--transition-fast), opacity var(--transition-fast);
+  }
+
+  .gen-thumb:hover {
+    opacity: 1;
+  }
+
+  .gen-thumb.is-active {
+    border-color: var(--color-pill-ink);
+    opacity: 1;
+  }
+
+  .gen-thumb img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .gen-thumb__label {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    max-width: calc(100% - 12px);
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(20, 18, 15, 0.6);
+    border-radius: 6px;
+    padding: 0.05rem 0.35rem;
+    text-align: left;
+  }
+
+  .gen-divider {
+    border: none;
+    border-top: var(--border-hairline);
+    margin-block: var(--space-4);
+  }
+
+  .text-block {
+    margin-top: var(--space-2);
+  }
+</style>
+
+<script>
+  import { registerPlayer } from "../scripts/players";
+
+  document.querySelectorAll<HTMLElement>("[data-gen-platform]").forEach((plat) => {
+    const video = plat.querySelector<HTMLVideoElement>("[data-gen-video]");
+    if (!video) return;
+    registerPlayer(video, "gen-" + plat.dataset.genPlatform);
+
+    const thumbs = Array.from(plat.querySelectorAll<HTMLButtonElement>(".gen-thumb"));
+
+    const select = (btn: HTMLButtonElement) => {
+      const src = btn.dataset.genVideo;
+      if (!src) return;
+      thumbs.forEach((b) => b.classList.toggle("is-active", b === btn));
+
+      const wasAt = video.currentTime;
+      video.src = src;
+      video.poster = btn.dataset.genPoster ?? "";
+      video.load();
+      video.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (wasAt > 0 && wasAt < video.duration) video.currentTime = wasAt;
+        },
+        { once: true }
+      );
+      video.setAttribute("aria-label", `MiX-World video, ${btn.dataset.genLabel ?? ""}`);
+      video.play().catch(() => {});
+    };
+
+    thumbs.forEach((btn) => btn.addEventListener("click", () => select(btn)));
+  });
+</script>

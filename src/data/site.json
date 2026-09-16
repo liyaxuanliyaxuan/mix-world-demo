@@ -1,0 +1,558 @@
+{
+  "schema_version": "1.1-wip",
+  "document_type": "public_site_content_manifest_dev_preview",
+  "project": {
+    "name": "MiX-World",
+    "formal_subtitle": "A Unified World Model for Manipulators and Locomoting Humanoids",
+    "kicker": "World Model",
+    "language": "en",
+    "description": "One model learns from fixed-base bimanual robots, mobile manipulators, and locomoting humanoids to predict how actions shape future observations.",
+    "meta": "ICLR 2027 · Anonymous research preview"
+  },
+  "carousel": {
+    "note": "Select a robot family to explore precomputed predictions.",
+    "tabs": [
+      {
+        "id": "dual-arm",
+        "label": "Fixed-Base Bimanual",
+        "groups": [
+          {
+            "name": "Fixed-Base Bimanual",
+            "tasks": [
+              {
+                "name": "Pour Beer",
+                "video": "/media/showcase/tasks/fixed_beer_new.mp4",
+                "thumb": "/media/showcase/tasks/fixed_beer_new.jpg"
+              },
+              {
+                "name": "Fold Socks",
+                "video": "/media/showcase/tasks/mobile_fold_socks.mp4",
+                "thumb": "/media/showcase/tasks/mobile_fold_socks.jpg"
+              },
+              {
+                "name": "Spread Bread Bartop",
+                "video": "/media/showcase/tasks/fixed_bread_bartop.mp4",
+                "thumb": "/media/showcase/tasks/fixed_bread_bartop.jpg"
+              },
+              {
+                "name": "Screw Bulb",
+                "video": "/media/showcase/tasks/fixed_screw_bulb.mp4",
+                "thumb": "/media/showcase/tasks/fixed_screw_bulb.jpg"
+              },
+              {
+                "name": "Wipe Blackboard",
+                "video": "/media/showcase/tasks/fixed_blackboard.mp4",
+                "thumb": "/media/showcase/tasks/fixed_blackboard.jpg"
+              },
+              {
+                "name": "Unlock",
+                "video": "/media/showcase/tasks/fixed_unlock.mp4",
+                "thumb": "/media/showcase/tasks/fixed_unlock.jpg"
+              },
+              {
+                "name": "Spread Bread",
+                "video": "/media/showcase/tasks/fixed_spread_bread.mp4",
+                "thumb": "/media/showcase/tasks/fixed_spread_bread.jpg"
+              },
+              {
+                "name": "Organize Pencil Case",
+                "video": "/media/showcase/tasks/fixed_pencilcase.mp4",
+                "thumb": "/media/showcase/tasks/fixed_pencilcase.jpg"
+              }
+            ]
+          }
+        ],
+        "layout": "strip"
+      },
+      {
+        "id": "humanoid",
+        "label": "Locomoting Humanoid",
+        "groups": [
+          {
+            "name": "Locomoting Humanoid",
+            "tasks": [
+              {
+                "name": "Retrieve and Place the Pillow",
+                "video": "/media/showcase/tasks/humanoid_pillow_h03_ego.mp4",
+                "thumb": "/media/showcase/tasks/humanoid_pillow_h03_ego.jpg"
+              },
+              {
+                "name": "Make the Bed",
+                "video": "/media/showcase/tasks/humanoid_make_bed_h04.mp4",
+                "thumb": "/media/showcase/tasks/humanoid_make_bed_h04.jpg"
+              },
+              {
+                "name": "Pick Up Pillow",
+                "video": "/media/showcase/tasks/ce_h05_15s.mp4",
+                "thumb": "/media/showcase/tasks/ce_h05_15s.jpg"
+              },
+              {
+                "name": "Put Clothes in the Basket",
+                "video": "/media/showcase/tasks/humanoid_basket_h06.mp4",
+                "thumb": "/media/showcase/tasks/humanoid_basket_h06.jpg"
+              }
+            ]
+          }
+        ],
+        "layout": "strip"
+      },
+      {
+        "id": "mobile",
+        "label": "Mobile Bimanual",
+        "groups": [
+          {
+            "name": "Mobile Bimanual",
+            "tasks": [
+              {
+                "name": "Throw Paper Cup",
+                "video": "/media/showcase/tasks/mobile_throw_cup.mp4",
+                "thumb": "/media/showcase/tasks/mobile_throw_cup.jpg"
+              },
+              {
+                "name": "Meeting Room Navigation",
+                "video": "/media/showcase/tasks/mobile_meeting_nav_m01.mp4",
+                "thumb": "/media/showcase/tasks/mobile_meeting_nav_m01.jpg"
+              },
+              {
+                "name": "Study Room Potato Chips",
+                "video": "/media/showcase/tasks/mobile_chips_m02.mp4",
+                "thumb": "/media/showcase/tasks/mobile_chips_m02.jpg"
+              },
+              {
+                "name": "Walk Around",
+                "video": "/media/showcase/tasks/mobile_walk_around.mp4",
+                "thumb": "/media/showcase/tasks/mobile_walk_around.jpg"
+              },
+              {
+                "name": "Collect Chips",
+                "video": "/media/showcase/tasks/mobile_collect_chips.mp4",
+                "thumb": "/media/showcase/tasks/mobile_collect_chips.jpg"
+              },
+              {
+                "name": "Place Pillow",
+                "video": "/media/showcase/tasks/mobile_place_pillow.mp4",
+                "thumb": "/media/showcase/tasks/mobile_place_pillow.jpg"
+              },
+              {
+                "name": "Place Orange",
+                "video": "/media/showcase/tasks/mobile_place_orange.mp4",
+                "thumb": "/media/showcase/tasks/mobile_place_orange.jpg"
+              }
+            ]
+          }
+        ],
+        "layout": "strip"
+      }
+    ],
+    "lead": "A single jointly trained checkpoint predicts manipulation and whole-body motion across all three robot families, using each robot’s native action inputs."
+  },
+  "multiview": {
+    "grids": [
+      {
+        "id": "fold-socks",
+        "caption": "Fold the socks and place them in the basket.",
+        "main": {
+          "label": "Third-person camera",
+          "video": "/media/showcase/mv_fold_socks_ceiling.mp4"
+        },
+        "side": [
+          {
+            "label": "Top-mounted camera",
+            "video": "/media/showcase/mv_fold_socks_high.mp4"
+          },
+          {
+            "label": "Left wrist camera",
+            "video": "/media/showcase/mv_fold_socks_left_wrist.mp4"
+          },
+          {
+            "label": "Right wrist camera",
+            "video": "/media/showcase/mv_fold_socks_right_wrist.mp4"
+          }
+        ],
+        "side_position": "right"
+      },
+      {
+        "id": "meeting",
+        "caption": "Pick up the red cup from the table.",
+        "main": {
+          "label": "Third-person camera",
+          "video": "/media/showcase/mv_meeting_ceiling.mp4"
+        },
+        "side": [
+          {
+            "label": "Top-mounted camera",
+            "video": "/media/showcase/mv_meeting_high.mp4"
+          },
+          {
+            "label": "Left wrist camera",
+            "video": "/media/showcase/mv_meeting_left_wrist.mp4"
+          },
+          {
+            "label": "Right wrist camera",
+            "video": "/media/showcase/mv_meeting_right_wrist.mp4"
+          }
+        ],
+        "side_position": "left"
+      },
+      {
+        "id": "humanoid",
+        "caption": "Retrieve and place the pillow.",
+        "main": {
+          "label": "Head camera",
+          "video": "/media/showcase/mv_humanoid_h02_ego.mp4"
+        },
+        "side": [
+          {
+            "label": "Left wrist camera",
+            "video": "/media/showcase/mv_humanoid_h02_left_wrist.mp4"
+          },
+          {
+            "label": "Right wrist camera",
+            "video": "/media/showcase/mv_humanoid_h02_right_wrist.mp4"
+          }
+        ],
+        "side_position": "right"
+      }
+    ],
+    "lead": "MiX-World jointly predicts head, wrist, and third-person views of the same interaction, capturing scene changes as the robot and its cameras move."
+  },
+  "emergence": {
+    "intro": "In the checkpoint comparisons, coarse action following appears first, followed by coherent scene evolution across time and views. Later, object motion and deformation become more consistent with the robot’s contact.",
+    "gif_rows": [
+      {
+        "task": "Pillow",
+        "checkpoints": [
+          "5k",
+          "10k",
+          "40k",
+          "65k"
+        ]
+      },
+      {
+        "task": "Tassel",
+        "checkpoints": [
+          "5k",
+          "15k",
+          "40k",
+          "60k"
+        ]
+      },
+      {
+        "task": "Sweep",
+        "checkpoints": [
+          "5k",
+          "10k",
+          "45k",
+          "60k"
+        ]
+      }
+    ],
+    "gif_src_template": "/media/showcase/gifs/{task}_{ckpt}.gif",
+    "column_headers": [
+      "7%",
+      "20%",
+      "57%",
+      "85%"
+    ],
+    "scope_note": "Selected training examples illustrate this progression; the order is not a universal rule."
+  },
+  "actions": {
+    "status": "videos_ready",
+    "shared_note": "The first four conditions share the same initial observation and generation settings; only the actions change.",
+    "conditions": [
+      {
+        "id": "original",
+        "label": "Original actions",
+        "desc": "Replay the recorded action sequence.",
+        "video": "/media/actions/original.mp4",
+        "poster": "/media/actions/original_poster.jpg",
+        "traj": "/media/actions/traj_original.svg"
+      },
+      {
+        "id": "right_held",
+        "label": "Right arm held",
+        "desc": "Hold the right arm at its initial state while the left arm follows the recorded actions.",
+        "video": "/media/actions/right_held.mp4",
+        "poster": "/media/actions/right_held_poster.jpg",
+        "traj": "/media/actions/traj_right_held.svg"
+      },
+      {
+        "id": "xy_inverted",
+        "label": "XY-inverted",
+        "desc": "Mirror both grippers’ XY action coordinates about their starting positions.",
+        "video": "/media/actions/xy_inverted.mp4",
+        "poster": "/media/actions/xy_inverted_poster.jpg",
+        "traj": "/media/actions/traj_xy_inverted.svg"
+      },
+      {
+        "id": "both_held",
+        "label": "Both arms held",
+        "desc": "Hold both arms at their initial states.",
+        "video": "/media/actions/both_held.mp4",
+        "poster": "/media/actions/both_held_poster.jpg",
+        "traj": "/media/actions/traj_both_held.svg"
+      },
+      {
+        "id": "time_reversed",
+        "label": "Time-reversed",
+        "desc": "Reverse the action sequence, starting from the original prediction’s final frame.",
+        "video": "/media/actions/time_reversed.mp4",
+        "poster": "/media/actions/time_reversed_poster.jpg",
+        "traj": "/media/actions/traj_time_reversed.json",
+        "different_start": true
+      }
+    ],
+    "traj_caption": "Live end-effector position of the left (blue) and right (orange) gripper in the local top-down frame, tracked while the prediction plays; the strips below show each gripper's open fraction over the 38.4 s rollout.",
+    "scope_note": "Qualitative action responses. The first four conditions share an initial observation; time reversal starts from the original prediction’s final frame.",
+    "excluded_note": "Time reversal uses a different initial observation.",
+    "lead": "From the same initial observation, changing the action sequence produces different predicted hand motions and object responses."
+  },
+  "adaptation": {
+    "chart_data": "src/data/adaptation-results.json (generated by scripts/export_adaptation_data.py)",
+    "data_provenance": "rq2_final_20260914/measured_rows.json + rq2_{fixed,mobile,humanoid}_transfer_ssim.json",
+    "release_note": "Interactive charts pending owner approval for public build",
+    "videos": {
+      "clips_note": "Full test rollouts after adaptation: MiX-World prediction on the left, ground truth on the right.",
+      "embodiments": [
+        {
+          "id": "franka_dual",
+          "label": "Dual-arm Franka · RoboTwin 2.0",
+          "budget": "100 demonstrations per task · 3,000 updates",
+          "clips": [
+            {
+              "video": "/media/adaptation/fd_ep01_mix_grouped.mp4",
+              "poster": "/media/adaptation/fd_ep01_mix_grouped_poster.jpg",
+              "name": "Episode 01"
+            },
+            {
+              "video": "/media/adaptation/fd_ep02_mix_grouped.mp4",
+              "poster": "/media/adaptation/fd_ep02_mix_grouped_poster.jpg",
+              "name": "Episode 02"
+            },
+            {
+              "video": "/media/adaptation/fd_ep03_mix_grouped.mp4",
+              "poster": "/media/adaptation/fd_ep03_mix_grouped_poster.jpg",
+              "name": "Episode 03"
+            },
+            {
+              "video": "/media/adaptation/fd_ep04_mix_grouped.mp4",
+              "poster": "/media/adaptation/fd_ep04_mix_grouped_poster.jpg",
+              "name": "Episode 04"
+            },
+            {
+              "video": "/media/adaptation/fd_ep05_mix_grouped.mp4",
+              "poster": "/media/adaptation/fd_ep05_mix_grouped_poster.jpg",
+              "name": "Episode 05"
+            }
+          ],
+          "layout": "split"
+        },
+        {
+          "id": "franka_single",
+          "label": "Single-arm Franka · LIBERO",
+          "budget": "1 demonstration per task · 100 updates · one-shot",
+          "clips": [
+            {
+              "video": "/media/adaptation/fs_ep01_equal_views_grouped.mp4",
+              "poster": "/media/adaptation/fs_ep01_equal_views_grouped_poster.jpg",
+              "name": "Episode 01"
+            },
+            {
+              "video": "/media/adaptation/fs_ep02_equal_views_grouped.mp4",
+              "poster": "/media/adaptation/fs_ep02_equal_views_grouped_poster.jpg",
+              "name": "Episode 02"
+            },
+            {
+              "video": "/media/adaptation/fs_ep03_equal_views_grouped.mp4",
+              "poster": "/media/adaptation/fs_ep03_equal_views_grouped_poster.jpg",
+              "name": "Episode 03"
+            }
+          ],
+          "layout": "split"
+        },
+        {
+          "id": "ur5_dual",
+          "label": "Dual-arm UR5 · RoboTwin 2.0",
+          "budget": "100 demonstrations per task · 1,000 updates",
+          "clips": [
+            {
+              "video": "/media/adaptation/ur_ep01_mix_grouped.mp4",
+              "poster": "/media/adaptation/ur_ep01_mix_grouped_poster.jpg",
+              "name": "Episode 01"
+            },
+            {
+              "video": "/media/adaptation/ur_ep02_mix_grouped.mp4",
+              "poster": "/media/adaptation/ur_ep02_mix_grouped_poster.jpg",
+              "name": "Episode 02"
+            },
+            {
+              "video": "/media/adaptation/ur_ep03_mix_grouped.mp4",
+              "poster": "/media/adaptation/ur_ep03_mix_grouped_poster.jpg",
+              "name": "Episode 03"
+            },
+            {
+              "video": "/media/adaptation/ur_ep04_mix_grouped.mp4",
+              "poster": "/media/adaptation/ur_ep04_mix_grouped_poster.jpg",
+              "name": "Episode 04"
+            },
+            {
+              "video": "/media/adaptation/ur_ep05_mix_grouped.mp4",
+              "poster": "/media/adaptation/ur_ep05_mix_grouped_poster.jpg",
+              "name": "Episode 05"
+            }
+          ],
+          "layout": "split"
+        }
+      ]
+    },
+    "lead": "Shared pretraining improves adaptation to new tasks on familiar robot families and to previously unseen embodiments. MiX-World and Wan are compared with the same target data and training budgets.",
+    "seen_title": "New Tasks on Familiar Robots",
+    "unseen_title": "New Robot Embodiments",
+    "chart_note": "PSNR gain over Wan · matched training budgets",
+    "one_shot_note": "1 demo/task · 100 updates"
+  },
+  "method": {
+    "figure_src": "/media/figures/fig2_method_overview_final_web.png",
+    "figure_alt": "Paper Figure 2 — MiX-World method overview: (a) shared video diffusion transformer with multiview futures; (b) semantically structured conditioning; (c) event-anchored scheduling; (d) time-anchored RoPE.",
+    "caption_draft": "A shared video generator predicts synchronized future views from the current observation, a language instruction, and each robot’s native action sequence.",
+    "points": [
+      {
+        "name": "Semantically Structured Conditioning (SSC)",
+        "text": "Organizes robot controls by physical meaning, with masks for the fields each robot uses."
+      },
+      {
+        "name": "Event-Anchored Scheduling (EAS)",
+        "text": "Keeps frames around abrupt action changes while sampling trajectories at multiple timescales."
+      },
+      {
+        "name": "Time-Anchored RoPE (TA-RoPE)",
+        "text": "Encodes elapsed physical time so predictions account for uneven intervals between sampled frames."
+      }
+    ]
+  },
+  "generalization": {
+    "platforms": [
+      {
+        "id": "fixed",
+        "name": "Fixed-Base Bimanual · Bottle Opening",
+        "env_note": "4.8 s prediction",
+        "conditions": [
+          {
+            "id": "background",
+            "label": "Background — log cabin",
+            "video": "/media/gen/fixed_background.mp4",
+            "poster": "/media/gen/fixed_background.poster.jpg",
+            "initial": "/media/gen/fixed_background_initial_main.png"
+          },
+          {
+            "id": "layout",
+            "label": "Layout — countertop notch",
+            "video": "/media/gen/fixed_layout.mp4",
+            "poster": "/media/gen/fixed_layout.poster.jpg",
+            "initial": "/media/gen/fixed_layout_initial_main.png"
+          },
+          {
+            "id": "objects",
+            "label": "Objects — new bottle",
+            "video": "/media/gen/fixed_objects.mp4",
+            "poster": "/media/gen/fixed_objects.poster.jpg",
+            "initial": "/media/gen/fixed_objects_initial_main.png"
+          }
+        ],
+        "source": {
+          "label": "Source scene — unedited",
+          "thumb": "/media/gen/fixed_source_t0000_main.png?v=2",
+          "video": "/media/gen/fixed_source.mp4",
+          "poster": "/media/gen/fixed_source_t0000_main.png",
+          "note": "The source video is the recorded future of the unedited scene, provided for reference. Ground truth is unavailable for the edited scenes."
+        },
+        "source_note": "The source video is the recorded future of the unedited scene, provided for reference. Ground truth is unavailable for the edited scenes."
+      },
+      {
+        "id": "mobile",
+        "name": "Mobile Bimanual · Collecting Chips",
+        "env_note": "First 19.2 s of a 96 s rollout",
+        "conditions": [
+          {
+            "id": "room",
+            "label": "Room — blackboard",
+            "video": "/media/gen/mobile_room.mp4",
+            "poster": "/media/gen/mobile_room.poster.jpg",
+            "initial": "/media/gen/mobile_room_initial_main.png"
+          },
+          {
+            "id": "layout",
+            "label": "Layout — shelf shifted",
+            "video": "/media/gen/mobile_layout.mp4",
+            "poster": "/media/gen/mobile_layout.poster.jpg",
+            "initial": "/media/gen/mobile_layout_initial_main.png"
+          },
+          {
+            "id": "background",
+            "label": "Background — green mat",
+            "video": "/media/gen/mobile_background.mp4",
+            "poster": "/media/gen/mobile_background.poster.jpg",
+            "initial": "/media/gen/mobile_background_initial_main.png"
+          },
+          {
+            "id": "objects",
+            "label": "Objects — bags rearranged",
+            "video": "/media/gen/mobile_objects.mp4",
+            "poster": "/media/gen/mobile_objects.poster.jpg",
+            "initial": "/media/gen/mobile_objects_initial_main.png"
+          }
+        ],
+        "source": {
+          "label": "Source scene — unedited",
+          "thumb": "/media/gen/mobile_source_t0000_main.png?v=2",
+          "video": "/media/gen/mobile_source.mp4",
+          "poster": "/media/gen/mobile_source_t0000_main.png",
+          "note": "The source video is the recorded future of the unedited scene, provided for reference. Ground truth is unavailable for the edited scenes."
+        },
+        "source_note": "The source video is the recorded future of the unedited scene, provided for reference. Ground truth is unavailable for the edited scenes."
+      }
+    ],
+    "scope_note": "Qualitative examples use scenes constructed by editing the first observation after training.",
+    "source_note": "Videos are the complete prediction rollouts delivered by the research team (SHA256-verified copies; the mobile clips are trimmed to the paper display window).",
+    "lead": "Edit the initial scene while keeping the actions fixed. MiX-World carries changes in background, layout, and objects into its predicted futures."
+  },
+  "sections": {
+    "demos": {
+      "kicker": "Cross-embodiment prediction",
+      "title": "One World Model, Different Embodiments"
+    },
+    "actions": {
+      "kicker": "Action conditioning",
+      "title": "Different Actions, Different Futures"
+    },
+    "views": {
+      "kicker": "Joint multi-view prediction",
+      "title": "One Trajectory, Multiple Views"
+    },
+    "adaptation": {
+      "kicker": "Transfer from shared experience",
+      "title": "Adapting to New Tasks and Robots"
+    },
+    "generalization": {
+      "kicker": "Controlled scene generalization",
+      "title": "Generalizing to Unseen Scenes"
+    },
+    "emergence": {
+      "kicker": "Learning dynamics",
+      "title": "From Action Following to Interaction Dynamics"
+    },
+    "method": {
+      "kicker": "Method overview",
+      "title": "How MiX-World Works"
+    }
+  },
+  "footer": "All predictions are precomputed. Recorded source videos and ground-truth comparisons are labeled separately.",
+  "temporal": {
+    "videos_available": true,
+    "lead": "Brief events can fall between uniformly sampled frames. EAS samples more densely around events and less densely where little changes, and TA-RoPE anchors every sampled frame to physical time — so predictions line up with the reference at matched physical times.",
+    "caption_note": "Ceiling-view comparison from paper Fig. 6 (candidate 02): ground truth, fixed-rate baseline, and EAS with TA-RoPE share one playback timeline spanning 15.66 seconds of physical time. Each panel shows the same physical timestamp.",
+    "strip_fallback": "/media/temporal/qualitative_strip.png",
+    "video": "/media/temporal/candidate02_ceiling_physical_time.mp4",
+    "poster": "/media/temporal/candidate02_ceiling_physical_time.jpg"
+  }
+}
