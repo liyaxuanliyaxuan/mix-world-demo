@@ -6,7 +6,7 @@ import { defineConfig } from 'astro/config';
 //   npm run build:review   -> dist-review/   (anonymous review preview, noindex)
 //   npm run build:public   -> dist-public/   (public; unapproved modules hidden)
 export default defineConfig({
-  base: '/mix-world-demo',
+  base: './',
   output: 'static',
   compressHTML: true,
 });

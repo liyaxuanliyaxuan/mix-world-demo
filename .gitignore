@@ -7,3 +7,5 @@ dist-public/
 # internal material never enters release packaging
 internal/paper/
 internal/raw/
+node_modules/
+site_preview/
